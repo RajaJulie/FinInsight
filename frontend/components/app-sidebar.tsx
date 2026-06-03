@@ -15,7 +15,20 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
+import {
+  Home,
+  ListChecks,
+  CircleDollarSign,
+  CreditCard,
+  Folder,
+  Target,
+  BarChart3,
+  Bell,
+  Settings,
+  CircleHelp,
+  Tags,
+  ChartPie,
+} from "lucide-react"
 
 
 const data = {
@@ -25,48 +38,16 @@ const data = {
     avatar: "logo.png",
   },
   navMain: [
-    {
-      title: "Transactions",
-      url: "#",
-      icon: (
-        <LayoutDashboardIcon
-        />
-      ),
-    },
-    {
-      title: "Catégories",
-      url: "#",
-      icon: (
-        <ListIcon
-        />
-      ),
-    },
-    {
-      title: "Comptes",
-      url: "#",
-      icon: (
-        <ChartBarIcon
-        />
-      ),
-    },
-    {
-      title: "Budget",
-      url: "#",
-      icon: (
-        <FolderIcon
-        />
-      ),
-    },
-    {
-      title: "Objectif",
-      url: "#",
-      icon: (
-        <UsersIcon
-        />
-      ),
-    },
+    { title: "Tableau de bord", url: "/dashboard", icon: <Home /> },
+    { title: "Transactions", url: "#", icon: <ListChecks /> },
+    { title: "Catégories", url: "#", icon: <Tags /> },
+    { title: "Comptes", url: "#", icon: <CreditCard /> },
+    { title: "Budgets", url: "#", icon: <ChartPie /> },
+    { title: "Objectifs", url: "#", icon: <Target /> },
+    { title: "Insights", url: "#", icon: <BarChart3 /> },
+    { title: "Alertes", url: "#", icon: <Bell /> },
   ],
-  navClouds: [
+  /*navClouds: [
     {
       title: "Insights",
       icon: (
@@ -122,34 +103,12 @@ const data = {
         },
       ],
     },
-  ],
+  ],*/
   navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: (
-        <Settings2Icon
-        />
-      ),
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: (
-        <CircleHelpIcon
-        />
-      ),
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: (
-        <SearchIcon
-        />
-      ),
-    },
+    { title: "Paramètres", url: "#", icon: <Settings /> },
+    { title: "Aide & support", url: "#", icon: <CircleHelp /> },
   ],
-  documents: [
+  /*documents: [
     {
       name: "Data Library",
       url: "#",
@@ -174,12 +133,12 @@ const data = {
         />
       ),
     },
-  ],
+  ],*/
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="offcanvas"  {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -206,7 +165,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

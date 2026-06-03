@@ -5,6 +5,7 @@ import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { CategorySection } from "@/components/category-section"
+import { TransactionsSection } from "@/components/transactions-section"
 
 import data from "./data.json"
 
@@ -28,7 +29,7 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <CategorySection />
               </div>
-              <DataTable data={data} />
+              <TransactionsSection />
             </div>
           </div>
         </div>

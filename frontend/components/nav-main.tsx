@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,7 +7,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, MailIcon } from "lucide-react"
 
 export function NavMain({
   items,
@@ -21,37 +19,23 @@ export function NavMain({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Dashboard"
-              className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-              asChild
-            >
-              <a href="/dashboard">
-                <LayoutDashboardIcon
-                />
-                <span>Dashboard</span>
-              </a>
-            </SidebarMenuButton>
-            {/*<Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <MailIcon
-              />
-              <span className="sr-only">Inbox</span>
-            </Button>*/}
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
+      <SidebarGroupContent>
+        <SidebarMenu className="flex flex-col gap-2">
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon}
-                <span>{item.title}</span>
+              <SidebarMenuButton
+                tooltip={item.title}
+                asChild
+                className={
+                  item.title === "Tableau de bord"
+                    ? "h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-800 text-white hover:text-white"
+                    : "h-11 rounded-xl text-white/70 hover:bg-white/5 hover:text-white"
+                }
+              >
+                <a href={item.url}>
+                  {item.icon}
+                  <span>{item.title}</span>
+                </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
