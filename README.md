@@ -19,7 +19,3 @@ Application de gestion budgétaire développée avec Next.js et TypeScript.
 
 - npm install
 - npm run dev 
-
-Ouvrir ensuite : 
-
-http://localhost:3000/dashboard
