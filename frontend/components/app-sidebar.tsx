@@ -141,17 +141,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="/dashboard">
+              <a href="/dashboard" >
                 <img
-                  src="/logo-dark.png"
+                  src="/FinInsight_transparent.png"
                   alt="SpendSense"
-                  className="hidden dark:block h-30 w-auto"
+                  className="hidden dark:block h-40 w-auto"
                 />
 
                 <img
-                  src="/logo-light.png"
+                  src="/FinInsight_light_transparent.png"
                   alt="SpendSense"
-                  className="block dark:hidden h-30 w-auto"
+                  className="block dark:hidden h-40 w-auto"
                 />
               </a>
             </SidebarMenuButton>

@@ -23,23 +23,25 @@ export default function Page() {
       }
     >
       <AppSidebar variant="inset" />
-      <SidebarInset>
+
+      <SidebarInset className="min-w-0 overflow-x-hidden">
         <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="grid gap-6 px-4 py-4 lg:grid-cols-[1fr_minmax(450px,500px)] lg:px-6 md:py-6">
+
+        <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
+          <div className="@container/main flex min-w-0 flex-1 flex-col gap-2 overflow-x-hidden">
+            <div className="grid min-w-0 grid-cols-1 gap-6 px-4 py-4 md:py-6 xl:grid-cols-[minmax(0,1fr)_minmax(350px,500px)] xl:px-6">
               {/* Colonne gauche */}
-              <div className=" mx-auto w-full max-w-[1100px] space-y-6">
+              <div className="min-w-0 w-full space-y-6">
                 <SectionCards />
                 <CategorySection />
                 <TransactionsSection />
               </div>
 
               {/* Colonne droite */}
-              <div className="mx-auto w-full max-w-[1100px] space-y-6">
+              <div className="min-w-0 w-full space-y-6">
                 <BankConnections />
-                <ExpenseDistribution /> 
-                <MonthlyInsight /> 
+                <ExpenseDistribution />
+                <MonthlyInsight />
               </div>
             </div>
           </div>
