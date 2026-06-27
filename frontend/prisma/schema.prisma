@@ -18,5 +18,20 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+
+  transactions Transaction[]
 }
 
+model Transaction {
+  id          String   @id @default(cuid())
+  title       String
+  amount      Float
+  type        String
+  category    String
+  date        DateTime @default(now())
+
+  userId      String
+  user        User @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+}

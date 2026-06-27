@@ -30,7 +30,13 @@ export default async function Page() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader 
+          user={{
+            name: session.user?.name ?? "",
+            email: session.user?.email ?? "",
+            avatar: "/logo.png",
+          }}
+        />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="grid gap-6 px-4 py-4 lg:grid-cols-[1fr_minmax(450px,500px)] lg:px-6 md:py-6">
