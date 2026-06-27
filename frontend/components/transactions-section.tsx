@@ -59,7 +59,7 @@ export function TransactionsSection() {
     
     <Card
       className="
-        @/container/card
+        @container/card
       "
     >
       <CardHeader>
@@ -76,7 +76,7 @@ export function TransactionsSection() {
 
       <CardContent>
         {/* En-tête */}
-        <div className="grid grid-cols-[180px_1fr_180px_150px] rounded-lg bg-white/5 px-4 py-3 text-sm text-white/60">
+        <div className="grid grid-cols-[2fr_2fr_1.5fr_1fr] rounded-lg bg-white/5 px-4 py-3 text-sm text-white/60">
           <span>Date</span>
           <span>Description</span>
           <span>Catégorie</span>
@@ -87,7 +87,7 @@ export function TransactionsSection() {
         {transactions.map((transaction) => (
           <div
             key={`${transaction.description}-${transaction.date}`}
-            className="grid grid-cols-[180px_1fr_180px_150px] items-center border-b border-white/5 px-4 py-4"
+            className="grid grid-cols-[2fr_2fr_1.5fr_1fr] items-center border-b border-white/5 px-4 py-4"
           >
             <div className="text-white/60">
               {transaction.date}

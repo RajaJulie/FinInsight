@@ -10,9 +10,15 @@ import { BankConnections } from "@/components/bank-connections"
 import { ExpenseDistribution } from "@/components/expense-distribution"
 import { MonthlyInsight } from "@/components/monthly-insight"
 
-import data from "./data.json"
+import { redirect } from "next/navigation"
+import { auth } from "@/auth"
 
-export default function Page() {
+export default async function Page() {
+  const session = await auth()
+
+  if (!session?.user) {
+    redirect("/login")
+  }
   return (
     <SidebarProvider
       style={
@@ -24,7 +30,13 @@ export default function Page() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader 
+          user={{
+            name: session.user?.name ?? "",
+            email: session.user?.email ?? "",
+            avatar: "/logo.png",
+          }}
+        />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="grid gap-6 px-4 py-4 lg:grid-cols-[1fr_minmax(450px,500px)] lg:px-6 md:py-6">
@@ -36,7 +48,7 @@ export default function Page() {
               </div>
 
               {/* Colonne droite */}
-              <div className="space-y-6">
+              <div className="mx-auto w-full max-w-[1100px] space-y-6">
                 <BankConnections />
                 <ExpenseDistribution /> 
                 <MonthlyInsight /> 

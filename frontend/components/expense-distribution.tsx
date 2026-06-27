@@ -19,7 +19,7 @@ const expenseData = [
   { name: "Alimentation", value: 510, color: "#ef4444" },
   { name: "Transport", value: 320, color: "#f97316" },
   { name: "Loisirs", value: 190, color: "#8b5cf6" },
-  { name: "Autres", value: 460, color: "#64748b" },
+  { name: "Autres", value: 660, color: "#64748b" },
 ]
 
 const total = expenseData.reduce((sum, item) => sum + item.value, 0)

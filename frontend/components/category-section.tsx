@@ -8,65 +8,71 @@ const categories = [
     image: "/categories/Burger.png",
     spent: 510,
     budget: 400,
-    color: "red",
-    ringColor: "#ef4444",
-    status: "Budget dépassé",
   },
   {
     name: "Transport",
     image: "/categories/car.png",
     spent: 320,
     budget: 350,
-    color: "orange",
-    ringColor: "#f97316",
   },
   {
     name: "Loisirs",
     image: "/categories/gamepad.png",
     spent: 190,
     budget: 200,
-    color: "orange",
-    ringColor: "#f97316",
   },
   {
     name: "Épargne",
     image: "/categories/safe.png",
     spent: 720,
     budget: 1000,
-    color: "green",
-    ringColor: "#22c55e",
   },
   {
     name: "Shopping",
     image: "/categories/shopping.png",
     spent: 460,
     budget: 500,
-    color: "orange",
-    ringColor: "#f97316",
   },
 ]
 
+function getBudgetStatus(percentage: number) {
+  if (percentage >= 100) {
+    return {
+      ringColor: "#ef4444",
+      textClass: "text-red-500",
+      bgClass: "bg-red-500/10",
+      borderClass: "border-red-500/30",
+      label: "Budget dépassé",
+      isDanger: true,
+    }
+  }
+
+  if (percentage >= 80) {
+    return {
+      ringColor: "#f97316",
+      textClass: "text-orange-400",
+      bgClass: "bg-orange-500/10",
+      borderClass: "border-orange-500/30",
+      label: "Presque atteint",
+      isDanger: false,
+    }
+  }
+
+  return {
+    ringColor: "#22c55e",
+    textClass: "text-green-400",
+    bgClass: "bg-green-500/10",
+    borderClass: "border-green-500/30",
+    label: "Budget maîtrisé",
+    isDanger: false,
+  }
+}
+
 export function CategorySection() {
   return (
-    <section
-      className="
-        mx-auto
-        w-full
-        max-w-[calc(100%-48px)]
-        rounded-2xl
-        border border-[#13223a]
-        bg-gradient-to-t
-        from-[#071226]
-        to-[#0b1d3a]
-        p-4
-        
-
-      "
-    >
+    <section className="mx-auto w-full max-w-[calc(100%-48px)] rounded-2xl border border-[#13223a] bg-gradient-to-t from-[#071226] to-[#0b1d3a] p-4">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">
-          Mes catégories
-        </h2>
+        <h2 className="text-xl font-semibold text-white">Mes catégories</h2>
 
         <button className="text-sm text-violet-400 hover:text-violet-300">
           Voir toutes
@@ -79,43 +85,33 @@ export function CategorySection() {
             (category.spent / category.budget) * 100
           )
 
+          const status = getBudgetStatus(percentage)
+
           return (
             <Card
               key={category.name}
-              className="
-                border-[#13223a]
-                bg-gradient-to-t
-                from-[#071226]
-                to-[#0b1d3a]
-                p-4
-                text-center
-              "
+              className="border-[#13223a] bg-gradient-to-t from-[#071226] to-[#0b1d3a] p-4 text-center"
             >
-              {/* Cercle progressif */}
               <div className="relative mx-auto flex h-36 w-36 items-center justify-center">
-                {/* Anneau */}
                 <div
                   className="absolute inset-0 rounded-full"
                   style={{
                     background: `conic-gradient(
-                      ${category.ringColor} ${Math.min(percentage, 100)}%,
+                      ${status.ringColor} ${Math.min(percentage, 100)}%,
                       rgba(255,255,255,0.12) 0
                     )`,
                   }}
                 />
 
-                {/* Centre */}
                 <div className="absolute inset-[10px] rounded-full bg-[#071226]" />
 
-                {/* Glow */}
                 <div
                   className="absolute inset-[20px] rounded-full blur-xl"
                   style={{
-                    backgroundColor: `${category.ringColor}20`,
+                    backgroundColor: `${status.ringColor}20`,
                   }}
                 />
 
-                {/* Image */}
                 <img
                   src={category.image}
                   alt={category.name}
@@ -123,41 +119,28 @@ export function CategorySection() {
                 />
               </div>
 
-              <p
-                className={`mt-4 text-xl font-bold ${
-                  category.color === "red"
-                    ? "text-red-500"
-                    : category.color === "green"
-                    ? "text-green-400"
-                    : "text-orange-400"
-                }`}
-              >
+              <p className={`mt-4 text-xl font-bold ${status.textClass}`}>
                 {category.spent} €
-                <span className="text-white">
-                  {" "}
-                  / {category.budget} €
-                </span>
+                <span className="text-white"> / {category.budget} €</span>
               </p>
 
               <p className="mt-2 text-sm text-white/70">
                 {percentage}% du budget
               </p>
 
-              {category.status && (
-                <div className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-500">
-                  <AlertTriangle className="h-4 w-4" />
-                  {category.status}
-                </div>
-              )}
+              <div
+                className={`mt-4 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm ${status.borderClass} ${status.bgClass} ${status.textClass}`}
+              >
+                {status.isDanger && <AlertTriangle className="h-4 w-4" />}
+                {status.label}
+              </div>
             </Card>
           )
         })}
       </div>
 
       <div className="mt-6 flex justify-center">
-        <Button variant="outline">
-          Voir toutes les catégories
-        </Button>
+        <Button variant="outline">Voir toutes les catégories</Button>
       </div>
     </section>
   )

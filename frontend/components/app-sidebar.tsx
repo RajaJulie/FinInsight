@@ -5,7 +5,7 @@ import * as React from "react"
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+
 import {
   Sidebar,
   SidebarContent,
@@ -32,11 +32,6 @@ import {
 
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "logo.png",
-  },
   navMain: [
     { title: "Tableau de bord", url: "/dashboard", icon: <Home /> },
     { title: "Transactions", url: "#", icon: <ListChecks /> },
@@ -167,9 +162,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      
     </Sidebar>
   )
 }
