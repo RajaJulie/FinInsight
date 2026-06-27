@@ -10,9 +10,15 @@ import { BankConnections } from "@/components/bank-connections"
 import { ExpenseDistribution } from "@/components/expense-distribution"
 import { MonthlyInsight } from "@/components/monthly-insight"
 
-import data from "./data.json"
+import { redirect } from "next/navigation"
+import { auth } from "@/auth"
 
-export default function Page() {
+export default async function Page() {
+  const session = await auth()
+
+  if (!session?.user) {
+    redirect("/login")
+  }
   return (
     <SidebarProvider
       style={
