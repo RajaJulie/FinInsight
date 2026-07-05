@@ -7,6 +7,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { usePathname } from "next/navigation"
 
 export function NavMain({
   items,
@@ -16,7 +17,11 @@ export function NavMain({
     url: string
     icon?: React.ReactNode
   }[]
-}) {
+
+}
+
+) {
+  const pathname = usePathname()
   return (
     <SidebarGroup>
       <SidebarGroupContent>
@@ -27,7 +32,7 @@ export function NavMain({
                 tooltip={item.title}
                 asChild
                 className={
-                  item.title === "Tableau de bord"
+                  pathname === item.url
                     ? "h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-800 text-white hover:text-white"
                     : "h-11 rounded-xl text-white/70 hover:bg-white/5 hover:text-white"
                 }

@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import Link from "next/link"
 
 const transactions = [
   {
@@ -69,7 +70,7 @@ export function TransactionsSection() {
           </CardTitle>
 
           <Button variant="ghost" size="sm" className="text-violet-400 hover:text-violet-300">
-            Voir toutes
+            <Link href="/transactions">Voir toutes</Link>
           </Button>
         </div>
       </CardHeader>
@@ -114,11 +115,6 @@ export function TransactionsSection() {
         ))}
       </CardContent>
 
-      <CardFooter className="justify-center">
-        <Button variant="outline">
-          Voir toutes les transactions
-        </Button>
-      </CardFooter>
     </Card>
     </div>
   )

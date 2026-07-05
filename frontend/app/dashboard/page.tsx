@@ -29,7 +29,7 @@ export default async function Page() {
       }
     >
       <AppSidebar variant="inset" />
-      <SidebarInset>
+      <SidebarInset className="min-w-0 overflow-x-hidden">
         <SiteHeader 
           user={{
             name: session.user?.name ?? "",

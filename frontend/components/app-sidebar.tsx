@@ -23,7 +23,6 @@ import {
   Folder,
   Target,
   BarChart3,
-  Bell,
   Settings,
   CircleHelp,
   Tags,
@@ -34,13 +33,13 @@ import {
 const data = {
   navMain: [
     { title: "Tableau de bord", url: "/dashboard", icon: <Home /> },
-    { title: "Transactions", url: "#", icon: <ListChecks /> },
+    { title: "Transactions", url: "/transactions", icon: <ListChecks /> },
     { title: "Catégories", url: "#", icon: <Tags /> },
     { title: "Comptes", url: "#", icon: <CreditCard /> },
     { title: "Budgets", url: "#", icon: <ChartPie /> },
     { title: "Objectifs", url: "#", icon: <Target /> },
     { title: "Insights", url: "#", icon: <BarChart3 /> },
-    { title: "Alertes", url: "#", icon: <Bell /> },
+    
   ],
   /*navClouds: [
     {

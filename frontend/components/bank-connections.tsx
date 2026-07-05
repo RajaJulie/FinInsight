@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -8,25 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-import { CheckCircle2, MoreHorizontal } from "lucide-react"
-
-const banks = [
-  {
-    name: "Crédit Agricole",
-    account: "Compte principal",
-    logo: "/banks/ca.png",
-  },
-  {
-    name: "LCL",
-    account: "Compte courant",
-    logo: "/banks/lcl.png",
-  },
-  {
-    name: "Revolut",
-    account: "Compte",
-    logo: "/banks/revolut.png",
-  },
-]
+import { CreditCard, Link2, PlusCircle } from "lucide-react"
 
 export function BankConnections() {
   return (
@@ -39,66 +23,54 @@ export function BankConnections() {
       "
     >
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>
-            Connexion bancaire
-          </CardTitle>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-violet-500/10 p-2">
+            <CreditCard className="h-5 w-5 text-violet-400" />
+          </div>
 
-          <div className="flex items-center gap-2 text-green-400 text-sm">
-            <CheckCircle2 className="h-4 w-4" />
-            Synchronisé
+          <div>
+            <CardTitle>Comptes bancaires</CardTitle>
+
+            <p className="text-sm text-muted-foreground mt-1">
+              Aucun compte bancaire connecté.
+            </p>
           </div>
         </div>
-
-        <p className="text-sm text-muted-foreground">
-          Vos comptes sont à jour.
-        </p>
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        {banks.map((bank) => (
-          <div
-            key={bank.name}
-            className="
-              flex items-center justify-between
-              rounded-xl border border-white/5
-              bg-black/10
-              p-3
-            "
-          >
-            <div className="flex items-center gap-3">
-              <img
-                src={bank.logo}
-                alt={bank.name}
-                className="h-10 w-10 rounded-lg object-contain bg-white"
-              />
+      <CardContent className="space-y-5">
+        <div className="rounded-xl border border-white/5 bg-black/10 p-4">
+          <p className="text-sm text-white">
+            Vous pouvez commencer à utiliser <strong>FinInsight</strong> sans
+            connecter votre banque.
+          </p>
 
-              <div>
-                <p className="font-medium">
-                  {bank.name}
-                </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ajoutez vos transactions manuellement ou connectez votre banque
+            lorsque cette fonctionnalité sera disponible.
+          </p>
+        </div>
 
-                <p className="text-sm text-muted-foreground">
-                  {bank.account}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-green-400">
-                Synchronisé
-              </span>
-
-              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </div>
-        ))}
+        <Button
+          asChild
+          className="w-full bg-gradient-to-r from-violet-600 to-cyan-500"
+        >
+          <Link href="/transactions">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Ajouter une transaction
+          </Link>
+        </Button>
 
         <Button
           variant="outline"
-          className="w-full"
+          disabled
+          className="w-full opacity-70"
         >
-          Gérer mes connexions
+          <Link2 className="mr-2 h-4 w-4" />
+          Connecter ma banque
+          <span className="ml-2 rounded-full bg-violet-500/10 px-2 py-0.5 text-xs text-violet-300">
+            Bientôt disponible
+          </span>
         </Button>
       </CardContent>
     </Card>

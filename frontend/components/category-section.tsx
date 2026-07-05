@@ -139,9 +139,6 @@ export function CategorySection() {
         })}
       </div>
 
-      <div className="mt-6 flex justify-center">
-        <Button variant="outline">Voir toutes les catégories</Button>
-      </div>
     </section>
   )
 }
