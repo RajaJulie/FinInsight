@@ -1,21 +1,87 @@
 # FinInsight
 
-Application de gestion budgétaire développée avec Next.js et TypeScript.
+Application Full Stack de gestion des finances personnelles développée avec Next.js, React, TypeScript et Prisma.
 
-## Fonctionnalités disponibles
+🚧 Projet actuellement en développement.
 
-- Dashboard budgétaire
-- Interface utilisateur responsive
-- Architecture modulaire
+---
 
-## En cours de développement
+## Présentation
 
-- Authentification
-- Backend
-- Base de données
-- Intégration des données financières
+FinInsight est une application permettant de gérer ses finances personnelles.
 
-## Lancer le projet 
+L'objectif est d'offrir une interface moderne permettant de :
 
-- npm install
-- npm run dev 
+- suivre ses revenus
+- gérer ses dépenses
+- consulter son solde
+- organiser ses transactions
+- visualiser ses statistiques financières
+
+---
+
+## Fonctionnalités
+
+✅ Authentification sécurisée
+
+✅ Dashboard
+
+✅ Gestion des transactions (CRUD)
+
+🚧 Gestion des catégories
+
+🚧 Répartition des dépenses
+
+🚧 Statistiques avancées
+
+---
+
+## Stack technique
+
+### Front-End
+
+- Next.js 15
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+
+### Back-End
+
+- API Routes
+- Auth.js
+- Prisma ORM
+
+### Base de données
+
+- PostgreSQL
+
+### Outils
+
+- Docker
+- Git
+- Postman
+
+---
+
+## Architecture
+
+...
+
+---
+
+## Captures d'écran
+
+...
+
+---
+
+## Installation
+
+...
+
+---
+
+## Roadmap
+
+...
