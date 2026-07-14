@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import { z } from "zod"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -40,9 +40,61 @@ const transactionSchema = z.object({
 type TransactionFormInput = z.input<typeof transactionSchema>
 type TransactionFormValues = z.output<typeof transactionSchema>
 
-export function TransactionDialog() {
-  const [open, setOpen] = useState(false)
+type EditableTransaction = {
+  id: string
+  title: string
+  amount: number
+  type: "INCOME" | "EXPENSE"
+  category: string
+  date: string
+}
+
+type TransactionDialogProps = {
+  transaction?: EditableTransaction | null
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onSaved?: (transaction: EditableTransaction) => void
+  trigger?: ReactNode | null
+}
+
+const defaultValues: TransactionFormInput = {
+  title: "",
+  amount: 0,
+  type: "EXPENSE",
+  category: "",
+  date: new Date().toISOString().split("T")[0],
+}
+
+function toDateInputValue(date: string) {
+  return new Date(date).toISOString().split("T")[0]
+}
+
+export function TransactionDialog({
+  transaction,
+  open: controlledOpen,
+  onOpenChange,
+  onSaved,
+  trigger,
+}: TransactionDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [apiError, setApiError] = useState("")
+  const [selectedType, setSelectedType] =
+    useState<TransactionFormValues["type"]>()
+  const [selectedCategory, setSelectedCategory] = useState<string>()
+  const isEditing = Boolean(transaction)
+  const open = controlledOpen ?? internalOpen
+
+  function setOpen(nextOpen: boolean) {
+    onOpenChange?.(nextOpen)
+    setInternalOpen(nextOpen)
+
+    if (!nextOpen) {
+      setSelectedType(undefined)
+      setSelectedCategory(undefined)
+      setApiError("")
+    }
+  }
 
   const {
     register,
@@ -50,52 +102,93 @@ export function TransactionDialog() {
     setValue,
     reset,
     formState: { errors },
-    } = useForm<TransactionFormInput, unknown, TransactionFormValues>({
+  } = useForm<TransactionFormInput, unknown, TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: {
-        title: "",
-        amount: 0,
-        type: "EXPENSE",
-        category: "",
-        date: new Date().toISOString().split("T")[0],
-    },
-    })
+    defaultValues,
+  })
 
-  const onSubmit: SubmitHandler <TransactionFormValues>  = async (values) => {
-    setIsLoading(true)
-
-    const response = await fetch("/api/transactions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(values),
-    })
-
-    setIsLoading(false)
-
-    if (!response.ok) {
-      alert("Erreur lors de la création de la transaction.")
+  useEffect(() => {
+    if (!open) {
       return
     }
 
-    reset()
-    setOpen(false)
-    window.location.reload()
+    if (transaction) {
+      reset({
+        title: transaction.title,
+        amount: transaction.amount,
+        type: transaction.type,
+        category: transaction.category,
+        date: toDateInputValue(transaction.date),
+      })
+      return
+    }
+
+    reset(defaultValues)
+  }, [open, reset, transaction])
+
+  const onSubmit: SubmitHandler<TransactionFormValues> = async (values) => {
+    setIsLoading(true)
+    setApiError("")
+
+    try {
+      const response = await fetch(
+        isEditing
+          ? `/api/transactions/${transaction?.id}`
+          : "/api/transactions",
+        {
+          method: isEditing ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setApiError(
+          data.message ?? "Erreur lors de l'enregistrement de la transaction."
+        )
+        return
+      }
+
+      const savedTransaction = isEditing ? data : data.transaction
+
+      reset(defaultValues)
+      setOpen(false)
+
+      if (onSaved) {
+        onSaved(savedTransaction)
+        return
+      }
+
+      window.location.reload()
+    } catch {
+      setApiError("Impossible de contacter le serveur.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-purple-600 to-cyan-500">
-          <PlusCircle className="mr-2 size-4" />
-          Ajouter une transaction
-        </Button>
-      </DialogTrigger>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button className="bg-gradient-to-r from-purple-600 to-cyan-500">
+              <PlusCircle className="mr-2 size-4" />
+              Ajouter une transaction
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ajouter une transaction</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Modifier la transaction" : "Ajouter une transaction"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -115,10 +208,14 @@ export function TransactionDialog() {
             <Field>
               <FieldLabel>Type</FieldLabel>
               <Select
-                defaultValue="EXPENSE"
-                onValueChange={(value) =>
-                  setValue("type", value as "INCOME" | "EXPENSE")
-                }
+                value={selectedType ?? transaction?.type ?? defaultValues.type}
+                onValueChange={(value) => {
+                  const nextType = value as "INCOME" | "EXPENSE"
+                  setSelectedType(nextType)
+                  setValue("type", nextType, {
+                    shouldValidate: true,
+                  })
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Choisir un type" />
@@ -133,7 +230,17 @@ export function TransactionDialog() {
 
             <Field>
               <FieldLabel>Catégorie</FieldLabel>
-              <Select onValueChange={(value) => setValue("category", value)}>
+              <Select
+                value={
+                  selectedCategory ??
+                  transaction?.category ??
+                  defaultValues.category
+                }
+                onValueChange={(value) => {
+                  setSelectedCategory(value)
+                  setValue("category", value, { shouldValidate: true })
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Choisir une catégorie" />
                 </SelectTrigger>
@@ -142,6 +249,18 @@ export function TransactionDialog() {
                   <SelectItem value="Transport">Transport</SelectItem>
                   <SelectItem value="Loisirs">Loisirs</SelectItem>
                   <SelectItem value="Shopping">Shopping</SelectItem>
+                  <SelectItem value="Santé">Santé</SelectItem>
+                  <SelectItem value="Télécommunication">
+                    Télécommunication
+                  </SelectItem>
+                  <SelectItem value="Assurance">Assurance</SelectItem>
+                  <SelectItem value="Frais bancaires">
+                    Frais bancaires
+                  </SelectItem>
+                  <SelectItem value="Impôts et taxes">
+                    Impôts et taxes
+                  </SelectItem>
+                  <SelectItem value="Autre">Autre</SelectItem>
                   <SelectItem value="Revenus">Revenus</SelectItem>
                 </SelectContent>
               </Select>
@@ -156,8 +275,14 @@ export function TransactionDialog() {
               {errors.date && <FieldError>{errors.date.message}</FieldError>}
             </Field>
 
+            {apiError && <FieldError>{apiError}</FieldError>}
+
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Ajout en cours..." : "Ajouter"}
+              {isLoading
+                ? "Enregistrement..."
+                : isEditing
+                ? "Modifier"
+                : "Ajouter"}
             </Button>
           </FieldGroup>
         </form>

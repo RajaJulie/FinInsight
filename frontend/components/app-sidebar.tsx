@@ -2,45 +2,22 @@
 
 import * as React from "react"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {
-  Home,
-  ListChecks,
-  CircleDollarSign,
-  CreditCard,
-  Folder,
-  Target,
-  BarChart3,
-  Settings,
-  CircleHelp,
-  Tags,
-  ChartPie,
-} from "lucide-react"
+import { CircleHelp, Settings } from "lucide-react"
+import { mainNavigationItems } from "@/lib/navigation"
 
 
 const data = {
-  navMain: [
-    { title: "Tableau de bord", url: "/dashboard", icon: <Home /> },
-    { title: "Transactions", url: "/transactions", icon: <ListChecks /> },
-    { title: "Catégories", url: "#", icon: <Tags /> },
-    { title: "Comptes", url: "#", icon: <CreditCard /> },
-    { title: "Budgets", url: "#", icon: <ChartPie /> },
-    { title: "Objectifs", url: "#", icon: <Target /> },
-    { title: "Insights", url: "#", icon: <BarChart3 /> },
-    
-  ],
   /*navClouds: [
     {
       title: "Insights",
@@ -158,7 +135,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={mainNavigationItems} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       
