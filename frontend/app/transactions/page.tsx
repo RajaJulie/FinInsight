@@ -5,10 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Plus, Search, Download, Pencil, Trash2 } from "lucide-react"
-import Link from "next/link"
+import { Download } from "lucide-react"
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { TransactionsTable } from "@/components/transactions-table";
 
@@ -60,23 +57,6 @@ export default async function TransactionsPage() {
                 
               </div>
             </div>
-
-            <Card className="bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
-              <CardContent className="pt-6">
-                <div className="grid gap-4 md:grid-cols-[1fr_220px_220px]">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Rechercher une transaction..."
-                      className="pl-9"
-                    />
-                  </div>
-
-                  <Button variant="outline">Tous les types</Button>
-                  <Button variant="outline">Toutes les catégories</Button>
-                </div>
-              </CardContent>
-            </Card>
 
             <TransactionsTable />
 

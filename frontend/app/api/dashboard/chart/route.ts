@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"
+import { ensureDefaultAccount } from "@/lib/accounts/ensure-default"
 import { prisma } from "@/lib/prisma"
 
 function parseFilters(request: Request) {
@@ -58,12 +59,31 @@ export async function GET(request: Request) {
       )
     }
 
+    await ensureDefaultAccount(user.id)
+
+    const activeAccounts = await prisma.account.findMany({
+      where: {
+        userId: user.id,
+        status: "ACTIVE",
+        type: {
+          in: ["CHECKING", "CASH"],
+        },
+      },
+      select: {
+        id: true,
+        initialBalance: true,
+      },
+    })
+    const activeAccountIds = activeAccounts.map((account) => account.id)
+
     if (filters.month === "all") {
       const startOfYear = new Date(filters.year, 0, 1)
       const startOfNextYear = new Date(filters.year + 1, 0, 1)
       const transactions = await prisma.transaction.findMany({
         where: {
           userId: user.id,
+          accountId: { in: activeAccountIds },
+          type: { in: ["INCOME", "EXPENSE"] },
           date: {
             gte: startOfYear,
             lt: startOfNextYear,
@@ -90,7 +110,7 @@ export async function GET(request: Request) {
 
         if (transaction.type === "INCOME") {
           month.income += transaction.amount
-        } else {
+        } else if (transaction.type === "EXPENSE") {
           month.expense += transaction.amount
         }
       }
@@ -104,11 +124,17 @@ export async function GET(request: Request) {
 
     const startOfMonth = new Date(filters.year, filters.month - 1, 1)
     const startOfNextMonth = new Date(filters.year, filters.month, 1)
-    const [incomeBeforeMonth, expenseBeforeMonth, monthTransactions] =
+    const [
+      incomeBeforeMonth,
+      expenseBeforeMonth,
+      transfersBeforeMonth,
+      monthTransactions,
+    ] =
       await Promise.all([
         prisma.transaction.aggregate({
           where: {
             userId: user.id,
+            accountId: { in: activeAccountIds },
             type: "INCOME",
             date: {
               lt: startOfMonth,
@@ -121,6 +147,7 @@ export async function GET(request: Request) {
         prisma.transaction.aggregate({
           where: {
             userId: user.id,
+            accountId: { in: activeAccountIds },
             type: "EXPENSE",
             date: {
               lt: startOfMonth,
@@ -133,30 +160,98 @@ export async function GET(request: Request) {
         prisma.transaction.findMany({
           where: {
             userId: user.id,
+            type: "TRANSFER",
+            date: {
+              lt: startOfMonth,
+            },
+            OR: [
+              { accountId: { in: activeAccountIds } },
+              { destinationAccountId: { in: activeAccountIds } },
+            ],
+          },
+          select: {
+            amount: true,
+            accountId: true,
+            destinationAccountId: true,
+          },
+        }),
+        prisma.transaction.findMany({
+          where: {
+            userId: user.id,
             date: {
               gte: startOfMonth,
               lt: startOfNextMonth,
             },
+            OR: [
+              { accountId: { in: activeAccountIds } },
+              { destinationAccountId: { in: activeAccountIds } },
+            ],
           },
           select: {
             amount: true,
             type: true,
             date: true,
+            accountId: true,
+            destinationAccountId: true,
           },
         }),
       ])
 
+    const activeAccountIdSet = new Set(activeAccountIds)
+    const transferBalanceBeforeMonth = transfersBeforeMonth.reduce(
+      (total, transaction) =>
+        total +
+        (transaction.destinationAccountId &&
+        activeAccountIdSet.has(transaction.destinationAccountId)
+          ? transaction.amount
+          : 0) -
+        (transaction.accountId &&
+        activeAccountIdSet.has(transaction.accountId)
+          ? transaction.amount
+          : 0),
+      0
+    )
     const openingBalance =
+      activeAccounts.reduce(
+        (total, account) => total + account.initialBalance,
+        0
+      ) +
       (incomeBeforeMonth._sum.amount ?? 0) -
-      (expenseBeforeMonth._sum.amount ?? 0)
+      (expenseBeforeMonth._sum.amount ?? 0) +
+      transferBalanceBeforeMonth
     const dailyChanges = new Map<number, number>()
 
     for (const transaction of monthTransactions) {
       const day = transaction.date.getDate()
-      const signedAmount =
-        transaction.type === "INCOME"
-          ? transaction.amount
-          : -transaction.amount
+      let signedAmount = 0
+
+      if (
+        transaction.type === "INCOME" &&
+        transaction.accountId &&
+        activeAccountIdSet.has(transaction.accountId)
+      ) {
+        signedAmount = transaction.amount
+      } else if (
+        transaction.type === "EXPENSE" &&
+        transaction.accountId &&
+        activeAccountIdSet.has(transaction.accountId)
+      ) {
+        signedAmount = -transaction.amount
+      } else if (transaction.type === "TRANSFER") {
+        if (
+          transaction.accountId &&
+          activeAccountIdSet.has(transaction.accountId)
+        ) {
+          signedAmount -= transaction.amount
+        }
+
+        if (
+          transaction.destinationAccountId &&
+          activeAccountIdSet.has(transaction.destinationAccountId)
+        ) {
+          signedAmount += transaction.amount
+        }
+      }
 
       dailyChanges.set(day, (dailyChanges.get(day) ?? 0) + signedAmount)
     }

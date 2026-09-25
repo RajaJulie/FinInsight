@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Card } from "@/components/ui/card"
 
 type ExpenseCategory = {
@@ -117,9 +118,12 @@ export function CategorySection() {
       <div className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-3">
         <h2 className="min-w-0 break-words text-xl font-semibold text-white">Mes catégories</h2>
 
-        <button className="text-sm text-violet-400 hover:text-violet-300">
+        <Link
+          href="/categories"
+          className="text-sm text-violet-400 hover:text-violet-300"
+        >
           Voir toutes
-        </button>
+        </Link>
       </div>
 
       {isLoading && (
@@ -178,7 +182,14 @@ export function CategorySection() {
                 />
               </div>
 
-              <p className={`mt-4 break-words text-xl font-bold ${status.textClass}`}>
+              <h3
+                className="mt-4 min-h-11 text-balance break-words text-base font-semibold leading-snug text-white"
+                title={category.category}
+              >
+                {category.category}
+              </h3>
+
+              <p className={`mt-3 break-words text-xl font-bold ${status.textClass}`}>
                 {formatEuro(category.amount)}
               </p>
 

@@ -15,6 +15,21 @@ datasource db {
 enum TransactionType {
   INCOME
   EXPENSE
+  TRANSFER
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CASH
+  INVESTMENT
+  CREDIT
+  OTHER
+}
+
+enum AccountStatus {
+  ACTIVE
+  ARCHIVED
 }
 
 model User {
@@ -25,19 +40,98 @@ model User {
   createdAt DateTime @default(now())
 
   transactions Transaction[]
+  categories   Category[]
+  accounts     Account[]
+  budgets      Budget[]
 }
 
 model Transaction {
+  id                   String          @id @default(cuid())
+  title                String
+  amount               Float
+  type                 TransactionType
+  category             String
+  categoryId           String?
+  accountId            String?
+  destinationAccountId String?
+  date                 DateTime        @default(now())
+
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryRelation   Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account            Account?  @relation("SourceAccountTransactions", fields: [accountId], references: [id], onDelete: Restrict)
+  destinationAccount Account?  @relation("DestinationAccountTransfers", fields: [destinationAccountId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([categoryId])
+  @@index([accountId])
+  @@index([destinationAccountId])
+}
+
+model Category {
   id        String          @id @default(cuid())
-  title     String
-  amount    Float
+  name      String
   type      TransactionType
-  category  String
-  date      DateTime        @default(now())
+  icon      String
+  color     String
+  isDefault Boolean         @default(false)
 
-  userId    String
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  transactions Transaction[]
+  budgets      Budget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, type, name])
+  @@index([userId, type])
+}
+
+model Budget {
+  id     String @id @default(cuid())
+  amount Float
+  month  Int
+  year   Int
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, categoryId, month, year])
+  @@index([userId, year, month])
+  @@index([categoryId])
+}
+
+model Account {
+  id             String        @id @default(cuid())
+  name           String
+  type           AccountType
+  initialBalance Float         @default(0)
+  currency       String        @default("EUR")
+  icon           String
+  color          String
+  status         AccountStatus @default(ACTIVE)
+  isPrimary      Boolean       @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions      Transaction[] @relation("SourceAccountTransactions")
+  incomingTransfers Transaction[] @relation("DestinationAccountTransfers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, status])
 }

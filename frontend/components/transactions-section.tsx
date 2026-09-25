@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { ArrowDown, ArrowRightLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,8 +16,10 @@ type RecentTransaction = {
   id: string
   title: string
   amount: number
-  type: "INCOME" | "EXPENSE"
+  type: "INCOME" | "EXPENSE" | "TRANSFER"
   category: string
+  sourceAccountName: string | null
+  destinationAccountName: string | null
   date: string
 }
 
@@ -130,32 +133,58 @@ export function TransactionsSection() {
                   {dateFormatter.format(new Date(transaction.date))}
                 </div>
 
-                <div className="min-w-0 truncate font-medium text-white">
-                  {transaction.title}
-                </div>
+                {transaction.type === "TRANSFER" ? (
+                  <div className="col-span-3 flex min-w-0 items-start gap-3 rounded-lg bg-cyan-500/5 px-3 py-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-300">
+                      <ArrowRightLeft className="size-5" aria-hidden="true" />
+                    </span>
+                    <div className="flex min-w-0 flex-col items-start gap-1 text-sm leading-5 text-cyan-100">
+                      <span className="font-semibold text-cyan-200">
+                        {euroFormatter.format(transaction.amount)}
+                      </span>
+                      <span className="max-w-full whitespace-normal break-words font-medium">
+                        {transaction.sourceAccountName ?? "Compte source"}
+                      </span>
+                      <ArrowDown
+                        className="ml-1 size-4 shrink-0 text-cyan-300"
+                        aria-label="vers"
+                      />
+                      <span className="max-w-full whitespace-normal break-words font-medium">
+                        {transaction.destinationAccountName ??
+                          "Compte destination"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="min-w-0 truncate font-medium text-white">
+                      {transaction.title}
+                    </div>
 
-                <div className="min-w-0">
-                  <span
-                    className={`inline-block max-w-full truncate rounded-md px-3 py-1 text-sm ${
-                      transaction.type === "INCOME"
-                        ? "bg-green-500/10 text-green-400"
-                        : "bg-violet-500/10 text-violet-400"
-                    }`}
-                  >
-                    {transaction.category}
-                  </span>
-                </div>
+                    <div className="min-w-0">
+                      <span
+                        className={`inline-block max-w-full truncate rounded-md px-3 py-1 text-sm ${
+                          transaction.type === "INCOME"
+                            ? "bg-green-500/10 text-green-400"
+                            : "bg-violet-500/10 text-violet-400"
+                        }`}
+                      >
+                        {transaction.category}
+                      </span>
+                    </div>
 
-                <div
-                  className={`text-right font-semibold ${
-                    transaction.type === "INCOME"
-                      ? "text-green-400"
-                      : "text-white"
-                  }`}
-                >
-                  {transaction.type === "INCOME" ? "+" : "-"}
-                  {euroFormatter.format(transaction.amount)}
-                </div>
+                    <div
+                      className={`text-right font-semibold ${
+                        transaction.type === "INCOME"
+                          ? "text-green-400"
+                          : "text-white"
+                      }`}
+                    >
+                      {transaction.type === "INCOME" ? "+" : "-"}
+                      {euroFormatter.format(transaction.amount)}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
         </CardContent>

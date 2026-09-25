@@ -21,6 +21,9 @@ import type { BalanceChartData } from "@/components/chart-area-line-dots"
 
 type DashboardSummary = {
   balance: number
+  availableBalance: number
+  netWorth: number
+  savingsBalance: number
   monthlyIncome: number
   monthlyExpense: number
   monthlySaving: number
@@ -139,6 +142,8 @@ export function SectionCards() {
   }, [selectedMonth, selectedYear])
 
   const balance = summary?.balance ?? 0
+  const availableBalance = summary?.availableBalance ?? balance
+  const savingsBalance = summary?.savingsBalance ?? 0
   const monthlyIncome = summary?.monthlyIncome ?? 0
   const monthlyExpense = summary?.monthlyExpense ?? 0
   const monthlySaving = summary?.monthlySaving ?? 0
@@ -152,9 +157,9 @@ export function SectionCards() {
       <Card className="@container/card w-full min-w-0">
         <CardHeader className="flex min-w-0 flex-col gap-4 @[480px]/card:flex-row @[480px]/card:items-start @[480px]/card:justify-between">
           <div className="min-w-0">
-            <CardDescription>Solde total</CardDescription>
+            <CardDescription>Disponible</CardDescription>
             <CardTitle className="break-words text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {isLoading ? amountPlaceholder : formatEuro(balance)}
+              {isLoading ? amountPlaceholder : formatEuro(availableBalance)}
             </CardTitle>
           </div>
 
@@ -261,12 +266,12 @@ export function SectionCards() {
 
               <CardDescription>Épargne</CardDescription>
               <CardTitle className="truncate text-xl font-semibold tabular-nums text-blue-500">
-                {isLoading ? amountPlaceholder : formatEuro(monthlySaving)}
+                {isLoading ? amountPlaceholder : formatEuro(savingsBalance)}
               </CardTitle>
 
               <CardDescription className="flex items-center gap-1">
                 <TrendingUp className="size-4" />
-                Mois courant
+                Comptes d&apos;épargne
               </CardDescription>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -118,16 +119,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <a href="/dashboard" >
-                <img
+                <Image
                   src="/FinInsight_transparent.png"
                   alt="SpendSense"
-                  className="hidden dark:block h-40 w-auto"
+                  width={2000}
+                  height={2000}
+                  sizes="160px"
+                  className="hidden h-40 w-auto dark:block"
                 />
 
-                <img
+                <Image
                   src="/FinInsight_light_transparent.png"
                   alt="SpendSense"
-                  className="block dark:hidden h-40 w-auto"
+                  width={2000}
+                  height={2000}
+                  sizes="160px"
+                  className="block h-40 w-auto dark:hidden"
                 />
               </a>
             </SidebarMenuButton>

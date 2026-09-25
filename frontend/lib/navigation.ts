@@ -16,8 +16,8 @@ export type NavigationItem = {
 export const mainNavigationItems: NavigationItem[] = [
   { title: "Tableau de bord", url: "/dashboard", icon: "dashboard" },
   { title: "Transactions", url: "/transactions", icon: "transactions" },
-  { title: "Catégories", url: "#", icon: "categories" },
-  { title: "Comptes", url: "#", icon: "accounts" },
+  { title: "Catégories", url: "/categories", icon: "categories" },
+  { title: "Comptes", url: "/accounts", icon: "accounts" },
   { title: "Budgets", url: "#", icon: "budgets" },
   { title: "Objectifs", url: "#", icon: "goals" },
   { title: "Insights", url: "#", icon: "insights" },

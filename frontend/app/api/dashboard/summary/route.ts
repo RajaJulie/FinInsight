@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"
+import {
+  getCategoryAnalytics,
+  getCategoryDateRange,
+} from "@/lib/categories/analytics"
+import { ensureDefaultAccount } from "@/lib/accounts/ensure-default"
+import { synchronizeLegacyTransactionCategories } from "@/lib/categories/ensure-defaults"
 import { prisma } from "@/lib/prisma"
 
 function getCurrentMonthRange() {
   const now = new Date()
 
-  const startOfPreviousMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() - 1,
-    1
-  )
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
   return {
-    startOfPreviousMonth,
     startOfMonth,
     startOfNextMonth,
   }
@@ -48,34 +48,37 @@ export async function GET() {
       )
     }
 
-    const { startOfPreviousMonth, startOfMonth, startOfNextMonth } =
-      getCurrentMonthRange()
+    const { startOfMonth, startOfNextMonth } = getCurrentMonthRange()
+
+    await synchronizeLegacyTransactionCategories(user.id)
+    await ensureDefaultAccount(user.id)
 
     const [
-      historicalIncome,
-      historicalExpense,
+      activeAccounts,
       currentMonthIncome,
       currentMonthExpense,
-      expenseCategoryGroups,
-      previousMonthExpenseCategoryGroups,
-      recentTransactions,
+      categoryAnalysis,
+      recentTransactionRows,
     ] = await Promise.all([
-      prisma.transaction.aggregate({
+      prisma.account.findMany({
         where: {
           userId: user.id,
-          type: "INCOME",
+          status: "ACTIVE",
         },
-        _sum: {
-          amount: true,
-        },
-      }),
-      prisma.transaction.aggregate({
-        where: {
-          userId: user.id,
-          type: "EXPENSE",
-        },
-        _sum: {
-          amount: true,
+        select: {
+          type: true,
+          initialBalance: true,
+          transactions: {
+            select: {
+              amount: true,
+              type: true,
+            },
+          },
+          incomingTransfers: {
+            select: {
+              amount: true,
+            },
+          },
         },
       }),
       prisma.transaction.aggregate({
@@ -104,38 +107,14 @@ export async function GET() {
           amount: true,
         },
       }),
-      prisma.transaction.groupBy({
-        by: ["category"],
-        where: {
-          userId: user.id,
-          type: "EXPENSE",
-          date: {
-            gte: startOfMonth,
-            lt: startOfNextMonth,
-          },
-        },
-        _sum: {
-          amount: true,
-        },
-        orderBy: {
-          _sum: {
-            amount: "desc",
-          },
-        },
-      }),
-      prisma.transaction.groupBy({
-        by: ["category"],
-        where: {
-          userId: user.id,
-          type: "EXPENSE",
-          date: {
-            gte: startOfPreviousMonth,
-            lt: startOfMonth,
-          },
-        },
-        _sum: {
-          amount: true,
-        },
+      getCategoryAnalytics({
+        userId: user.id,
+        type: "EXPENSE",
+        range: getCategoryDateRange(
+          "month",
+          startOfMonth.getFullYear(),
+          startOfMonth.getMonth() + 1
+        ),
       }),
       prisma.transaction.findMany({
         where: {
@@ -151,56 +130,76 @@ export async function GET() {
           amount: true,
           type: true,
           category: true,
+          categoryRelation: {
+            select: {
+              name: true,
+            },
+          },
+          account: {
+            select: {
+              name: true,
+            },
+          },
+          destinationAccount: {
+            select: {
+              name: true,
+            },
+          },
           date: true,
         },
       }),
     ])
 
-    const totalIncome = historicalIncome._sum.amount ?? 0
-    const totalExpense = historicalExpense._sum.amount ?? 0
+    const accountBalances = activeAccounts.map((account) => ({
+      type: account.type,
+      balance:
+        account.initialBalance +
+        account.transactions.reduce(
+          (accountBalance, transaction) =>
+            accountBalance +
+            (transaction.type === "INCOME"
+              ? transaction.amount
+              : -transaction.amount),
+          0
+        ) +
+        account.incomingTransfers.reduce(
+          (incomingBalance, transaction) =>
+            incomingBalance + transaction.amount,
+          0
+        ),
+    }))
+    const netWorth = accountBalances.reduce(
+      (total, account) => total + account.balance,
+      0
+    )
+    const availableBalance = accountBalances
+      .filter(
+        (account) =>
+          account.type === "CHECKING" || account.type === "CASH"
+      )
+      .reduce((total, account) => total + account.balance, 0)
+    const savingsBalance = accountBalances
+      .filter((account) => account.type === "SAVINGS")
+      .reduce((total, account) => total + account.balance, 0)
     const monthlyIncome = currentMonthIncome._sum.amount ?? 0
     const monthlyExpense = currentMonthExpense._sum.amount ?? 0
-    const expenseCategories =
-      monthlyExpense === 0
-        ? []
-        : expenseCategoryGroups.map((group) => {
-            const amount = group._sum.amount ?? 0
-
-            return {
-              category: group.category,
-              amount,
-              percentage: Math.round((amount / monthlyExpense) * 100),
-            }
-          })
-    const previousAmountsByCategory = new Map(
-      previousMonthExpenseCategoryGroups.map((group) => [
-        group.category,
-        group._sum.amount ?? 0,
-      ])
-    )
-    const significantIncrease = expenseCategoryGroups
-      .map((group) => {
-        const currentAmount = group._sum.amount ?? 0
-        const previousAmount =
-          previousAmountsByCategory.get(group.category) ?? 0
-
-        if (previousAmount === 0) {
-          return null
-        }
-
-        return {
-          category: group.category,
-          currentAmount,
-          previousAmount,
-          percentageChange: Math.round(
-            ((currentAmount - previousAmount) / previousAmount) * 100
-          ),
-        }
-      })
+    const expenseCategories = categoryAnalysis.categories.map((category) => ({
+      category: category.name,
+      amount: category.amount,
+      percentage: Math.round(category.percentage),
+    }))
+    const significantIncrease = categoryAnalysis.categories
       .filter(
-        (insight): insight is NonNullable<typeof insight> =>
-          insight !== null && insight.percentageChange >= 10
+        (category) =>
+          category.percentageChange !== null &&
+          category.percentageChange >= 10
       )
+      .map((category) => ({
+        category: category.name,
+        currentAmount: category.amount,
+        previousAmount: category.previousAmount,
+        percentageChange: Math.round(category.percentageChange ?? 0),
+      }))
       .sort((a, b) => b.percentageChange - a.percentageChange)[0]
 
     const monthlyInsight = significantIncrease
@@ -220,8 +219,22 @@ export async function GET() {
           message: "Aucune hausse significative de vos dépenses ce mois-ci.",
           advice: "Continuez à suivre régulièrement l’évolution de vos dépenses.",
         }
+    const recentTransactions = recentTransactionRows.map((transaction) => ({
+      id: transaction.id,
+      title: transaction.title,
+      amount: transaction.amount,
+      type: transaction.type,
+      category: transaction.categoryRelation?.name ?? transaction.category,
+      sourceAccountName: transaction.account?.name ?? null,
+      destinationAccountName: transaction.destinationAccount?.name ?? null,
+      date: transaction.date,
+    }))
+
     return NextResponse.json({
-      balance: totalIncome - totalExpense,
+      balance: availableBalance,
+      availableBalance,
+      netWorth,
+      savingsBalance,
       monthlyIncome,
       monthlyExpense,
       monthlySaving: monthlyIncome - monthlyExpense,

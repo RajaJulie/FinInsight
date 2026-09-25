@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { DEFAULT_CATEGORY_TEMPLATES } from "@/lib/categories/constants"
+import { DEFAULT_ACCOUNT } from "@/lib/accounts/constants"
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +35,12 @@ export async function POST(request: Request) {
         name,
         email,
         password: hashedPassword,
+        categories: {
+          create: DEFAULT_CATEGORY_TEMPLATES.map((category) => category),
+        },
+        accounts: {
+          create: DEFAULT_ACCOUNT,
+        },
       },
     })
 

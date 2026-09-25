@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useState } from "react"
 import { z } from "zod"
-import { SubmitHandler, useForm } from "react-hook-form"
+import { SubmitHandler, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { PlusCircle } from "lucide-react"
 
@@ -29,13 +29,41 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 
-const transactionSchema = z.object({
-  title: z.string().min(1, "Le titre est obligatoire."),
-  amount: z.coerce.number().positive("Le montant doit être supérieur à 0."),
-  type: z.enum(["INCOME", "EXPENSE"]),
-  category: z.string().min(1, "La catégorie est obligatoire."),
-  date: z.string().min(1, "La date est obligatoire."),
-})
+const transactionSchema = z
+  .object({
+    title: z.string().min(1, "Le titre est obligatoire."),
+    amount: z.coerce.number().positive("Le montant doit être supérieur à 0."),
+    type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]),
+    categoryId: z.string(),
+    accountId: z.string().min(1, "Le compte source est obligatoire."),
+    destinationAccountId: z.string(),
+    date: z.string().min(1, "La date est obligatoire."),
+  })
+  .superRefine((data, context) => {
+    if (data.type !== "TRANSFER" && !data.categoryId) {
+      context.addIssue({
+        code: "custom",
+        message: "La catégorie est obligatoire.",
+        path: ["categoryId"],
+      })
+    }
+
+    if (data.type === "TRANSFER") {
+      if (!data.destinationAccountId) {
+        context.addIssue({
+          code: "custom",
+          message: "Le compte destination est obligatoire.",
+          path: ["destinationAccountId"],
+        })
+      } else if (data.accountId === data.destinationAccountId) {
+        context.addIssue({
+          code: "custom",
+          message: "Choisissez deux comptes différents.",
+          path: ["destinationAccountId"],
+        })
+      }
+    }
+  })
 
 type TransactionFormInput = z.input<typeof transactionSchema>
 type TransactionFormValues = z.output<typeof transactionSchema>
@@ -44,9 +72,35 @@ type EditableTransaction = {
   id: string
   title: string
   amount: number
-  type: "INCOME" | "EXPENSE"
+  type: "INCOME" | "EXPENSE" | "TRANSFER"
   category: string
+  categoryId: string | null
+  accountId: string | null
+  destinationAccountId: string | null
+  account: { id: string; name: string } | null
+  destinationAccount: { id: string; name: string } | null
   date: string
+}
+
+type CategoryOption = {
+  id: string
+  name: string
+  type: "INCOME" | "EXPENSE"
+}
+
+type CategoriesResponse = {
+  categories: CategoryOption[]
+}
+
+type AccountOption = {
+  id: string
+  name: string
+  status: "ACTIVE" | "ARCHIVED"
+  isPrimary: boolean
+}
+
+type AccountsResponse = {
+  accounts: AccountOption[]
 }
 
 type TransactionDialogProps = {
@@ -61,7 +115,9 @@ const defaultValues: TransactionFormInput = {
   title: "",
   amount: 0,
   type: "EXPENSE",
-  category: "",
+  categoryId: "",
+  accountId: "",
+  destinationAccountId: "",
   date: new Date().toISOString().split("T")[0],
 }
 
@@ -78,10 +134,13 @@ export function TransactionDialog({
 }: TransactionDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isCategoriesLoading, setIsCategoriesLoading] = useState(false)
+  const [isAccountsLoading, setIsAccountsLoading] = useState(false)
+  const [categories, setCategories] = useState<CategoryOption[]>([])
+  const [accounts, setAccounts] = useState<AccountOption[]>([])
+  const [categoriesError, setCategoriesError] = useState("")
+  const [accountsError, setAccountsError] = useState("")
   const [apiError, setApiError] = useState("")
-  const [selectedType, setSelectedType] =
-    useState<TransactionFormValues["type"]>()
-  const [selectedCategory, setSelectedCategory] = useState<string>()
   const isEditing = Boolean(transaction)
   const open = controlledOpen ?? internalOpen
 
@@ -90,9 +149,9 @@ export function TransactionDialog({
     setInternalOpen(nextOpen)
 
     if (!nextOpen) {
-      setSelectedType(undefined)
-      setSelectedCategory(undefined)
       setApiError("")
+      setCategoriesError("")
+      setAccountsError("")
     }
   }
 
@@ -100,12 +159,107 @@ export function TransactionDialog({
     register,
     handleSubmit,
     setValue,
+    control,
     reset,
     formState: { errors },
   } = useForm<TransactionFormInput, unknown, TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues,
   })
+  const selectedType = useWatch({ control, name: "type" })
+  const selectedCategoryId = useWatch({ control, name: "categoryId" })
+  const selectedAccountId = useWatch({ control, name: "accountId" })
+  const selectedDestinationAccountId = useWatch({
+    control,
+    name: "destinationAccountId",
+  })
+  const availableCategories = categories.filter(
+    (category) => category.type === selectedType
+  )
+  const activeAccounts = accounts.filter(
+    (account) => account.status === "ACTIVE"
+  )
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    const controller = new AbortController()
+
+    async function fetchOptions() {
+      try {
+        setIsCategoriesLoading(true)
+        setIsAccountsLoading(true)
+        setCategoriesError("")
+        setAccountsError("")
+
+        const [categoriesResponse, accountsResponse] = await Promise.all([
+          fetch("/api/categories", { signal: controller.signal }),
+          fetch("/api/accounts", { signal: controller.signal }),
+        ])
+        const categoriesData =
+          (await categoriesResponse.json()) as CategoriesResponse & {
+            message?: string
+          }
+        const accountsData =
+          (await accountsResponse.json()) as AccountsResponse & {
+            message?: string
+          }
+
+        if (!categoriesResponse.ok) {
+          throw new Error(
+            categoriesData.message ?? "Impossible de charger les catégories."
+          )
+        }
+
+        if (!accountsResponse.ok) {
+          throw new Error(
+            accountsData.message ?? "Impossible de charger les comptes."
+          )
+        }
+
+        setCategories(categoriesData.categories)
+        setAccounts(accountsData.accounts)
+
+        if (!transaction?.accountId) {
+          const defaultAccount =
+            accountsData.accounts.find(
+              (account) => account.status === "ACTIVE" && account.isPrimary
+            ) ??
+            accountsData.accounts.find(
+              (account) => account.status === "ACTIVE"
+            )
+
+          if (defaultAccount) {
+            setValue("accountId", defaultAccount.id, {
+              shouldValidate: false,
+            })
+          }
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Impossible de charger les données du formulaire."
+        setCategoriesError(message)
+        setAccountsError(message)
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsCategoriesLoading(false)
+          setIsAccountsLoading(false)
+        }
+      }
+    }
+
+    void fetchOptions()
+
+    return () => controller.abort()
+  }, [open, setValue, transaction?.accountId])
 
   useEffect(() => {
     if (!open) {
@@ -117,7 +271,9 @@ export function TransactionDialog({
         title: transaction.title,
         amount: transaction.amount,
         type: transaction.type,
-        category: transaction.category,
+        categoryId: transaction.categoryId ?? "",
+        accountId: transaction.accountId ?? "",
+        destinationAccountId: transaction.destinationAccountId ?? "",
         date: toDateInputValue(transaction.date),
       })
       return
@@ -140,7 +296,25 @@ export function TransactionDialog({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(values),
+          body: JSON.stringify(
+            values.type === "TRANSFER"
+              ? {
+                  title: values.title,
+                  amount: values.amount,
+                  type: values.type,
+                  accountId: values.accountId,
+                  destinationAccountId: values.destinationAccountId,
+                  date: values.date,
+                }
+              : {
+                  title: values.title,
+                  amount: values.amount,
+                  type: values.type,
+                  categoryId: values.categoryId,
+                  accountId: values.accountId,
+                  date: values.date,
+                }
+          ),
         }
       )
 
@@ -208,12 +382,20 @@ export function TransactionDialog({
             <Field>
               <FieldLabel>Type</FieldLabel>
               <Select
-                value={selectedType ?? transaction?.type ?? defaultValues.type}
+                value={selectedType}
                 onValueChange={(value) => {
-                  const nextType = value as "INCOME" | "EXPENSE"
-                  setSelectedType(nextType)
+                  const nextType = value as
+                    | "INCOME"
+                    | "EXPENSE"
+                    | "TRANSFER"
                   setValue("type", nextType, {
                     shouldValidate: true,
+                  })
+                  setValue("categoryId", "", {
+                    shouldValidate: false,
+                  })
+                  setValue("destinationAccountId", "", {
+                    shouldValidate: false,
                   })
                 }}
               >
@@ -223,51 +405,125 @@ export function TransactionDialog({
                 <SelectContent>
                   <SelectItem value="EXPENSE">Dépense</SelectItem>
                   <SelectItem value="INCOME">Revenu</SelectItem>
+                  <SelectItem value="TRANSFER">Virement interne</SelectItem>
                 </SelectContent>
               </Select>
               {errors.type && <FieldError>{errors.type.message}</FieldError>}
             </Field>
 
             <Field>
-              <FieldLabel>Catégorie</FieldLabel>
+              <FieldLabel>
+                {selectedType === "TRANSFER" ? "Compte source" : "Compte"}
+              </FieldLabel>
               <Select
-                value={
-                  selectedCategory ??
-                  transaction?.category ??
-                  defaultValues.category
-                }
+                value={selectedAccountId}
+                disabled={isAccountsLoading || Boolean(accountsError)}
                 onValueChange={(value) => {
-                  setSelectedCategory(value)
-                  setValue("category", value, { shouldValidate: true })
+                  setValue("accountId", value, { shouldValidate: true })
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choisir une catégorie" />
+                  <SelectValue
+                    placeholder={
+                      isAccountsLoading
+                        ? "Chargement..."
+                        : "Choisir un compte"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Alimentation">Alimentation</SelectItem>
-                  <SelectItem value="Transport">Transport</SelectItem>
-                  <SelectItem value="Loisirs">Loisirs</SelectItem>
-                  <SelectItem value="Shopping">Shopping</SelectItem>
-                  <SelectItem value="Santé">Santé</SelectItem>
-                  <SelectItem value="Télécommunication">
-                    Télécommunication
-                  </SelectItem>
-                  <SelectItem value="Assurance">Assurance</SelectItem>
-                  <SelectItem value="Frais bancaires">
-                    Frais bancaires
-                  </SelectItem>
-                  <SelectItem value="Impôts et taxes">
-                    Impôts et taxes
-                  </SelectItem>
-                  <SelectItem value="Autre">Autre</SelectItem>
-                  <SelectItem value="Revenus">Revenus</SelectItem>
+                  {activeAccounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                      {account.isPrimary ? " · Principal" : ""}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {errors.category && (
-                <FieldError>{errors.category.message}</FieldError>
+              {accountsError && <FieldError>{accountsError}</FieldError>}
+              {!isAccountsLoading &&
+                !accountsError &&
+                activeAccounts.length === 0 && (
+                  <FieldError>Aucun compte actif disponible.</FieldError>
+                )}
+              {errors.accountId && (
+                <FieldError>{errors.accountId.message}</FieldError>
               )}
             </Field>
+
+            {selectedType === "TRANSFER" && (
+              <Field>
+                <FieldLabel>Compte destination</FieldLabel>
+                <Select
+                  value={selectedDestinationAccountId}
+                  disabled={isAccountsLoading || Boolean(accountsError)}
+                  onValueChange={(value) => {
+                    setValue("destinationAccountId", value, {
+                      shouldValidate: true,
+                    })
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le compte destination" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeAccounts
+                      .filter((account) => account.id !== selectedAccountId)
+                      .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {errors.destinationAccountId && (
+                  <FieldError>
+                    {errors.destinationAccountId.message}
+                  </FieldError>
+                )}
+              </Field>
+            )}
+
+            {selectedType !== "TRANSFER" && (
+              <Field>
+                <FieldLabel>Catégorie</FieldLabel>
+                <Select
+                  value={selectedCategoryId}
+                  disabled={isCategoriesLoading || Boolean(categoriesError)}
+                  onValueChange={(value) => {
+                    setValue("categoryId", value, { shouldValidate: true })
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        isCategoriesLoading
+                          ? "Chargement..."
+                          : "Choisir une catégorie"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {categoriesError && <FieldError>{categoriesError}</FieldError>}
+                {!isCategoriesLoading &&
+                  !categoriesError &&
+                  availableCategories.length === 0 && (
+                    <FieldError>
+                      Aucune catégorie disponible pour ce type.
+                    </FieldError>
+                  )}
+                {errors.categoryId && (
+                  <FieldError>{errors.categoryId.message}</FieldError>
+                )}
+              </Field>
+            )}
 
             <Field>
               <FieldLabel>Date</FieldLabel>
@@ -277,7 +533,19 @@ export function TransactionDialog({
 
             {apiError && <FieldError>{apiError}</FieldError>}
 
-            <Button type="submit" disabled={isLoading}>
+            <Button
+              type="submit"
+              disabled={
+                isLoading ||
+                isCategoriesLoading ||
+                isAccountsLoading ||
+                Boolean(accountsError) ||
+                !selectedAccountId ||
+                (selectedType === "TRANSFER"
+                  ? !selectedDestinationAccountId
+                  : Boolean(categoriesError) || !selectedCategoryId)
+              }
+            >
               {isLoading
                 ? "Enregistrement..."
                 : isEditing
