@@ -1,135 +1,178 @@
 # 💰 FinInsight
 
-> A modern Full Stack personal finance management application built with Next.js.
+> A Full Stack personal finance management application built with Next.js, TypeScript, Prisma and PostgreSQL.
 
 🚧 **Project currently under active development.**
 
 ---
 
-# 📖 About the project
+## 📖 About the project
 
-FinInsight is a Full Stack web application designed to help users better manage their personal finances.
+FinInsight is a Full Stack web application designed to help users manage and understand their personal finances through a modern and intuitive interface.
 
 The application allows users to:
 
 - Track income and expenses
-- Organize financial transactions
-- Monitor their financial balance
-- Visualize financial data through dashboards
-- Build better budgeting habits
+- Manage multiple financial accounts
+- Organize and categorize transactions
+- Transfer money between accounts
+- Create monthly budgets
+- Monitor account balances
+- Visualize financial activity through a dashboard
 
-This project was created to strengthen my Full Stack development skills by designing a complete application inspired by real-world financial platforms.
+This project was created to strengthen my Full Stack development skills by building a complete application inspired by real-world personal finance platforms.
 
 ---
 
-# ✨ Features
+## ✨ Features
 
-### Authentication
+### 🔐 Authentication
 
-- Secure user authentication
-- Password hashing with bcrypt
-- Protected routes using Auth.js
+- User registration and login
+- Secure password hashing with bcrypt
+- Authentication with Auth.js
+- Protected routes
+- User-specific financial data
 
-### Dashboard
+### 📊 Dashboard
 
 - Financial overview
-- Balance summary
-- Income & expense statistics
-- Interactive dashboard
+- Available balance summary
+- Income and expense statistics
+- Expense distribution by category
+- Financial charts
+- Recent transaction overview
 
-### Transactions
+### 💳 Accounts
+
+- Create and manage financial accounts
+- Support for different account types
+- Track individual account balances
+- Set a primary account
+- Archive accounts
+- Internal transfers between accounts
+
+### 💸 Transactions
 
 - Create transactions
 - Update transactions
 - Delete transactions
-- Categorize transactions
+- Income and expense management
+- Associate transactions with accounts and categories
+- Internal transfers between accounts
+- Search and filter transactions
 
-### Currently in development
+### 🏷️ Categories
 
-- Budget management
+- Manage transaction categories
+- Associate categories with expenses and income
+- Category-based financial analysis
+- Expense distribution by category
+
+### 🎯 Budgets
+
+- Create monthly budgets
+- Associate budgets with categories
+- Track spending against a budget
+- Calculate remaining budget
+- Monitor budget progress
+
+### 🚧 Currently in development
+
 - Financial goals
-- Expense analytics
-- Advanced statistics
-- Responsive improvements
+- Advanced financial insights
+- Data export
+- Notifications
+- Bank account connections
+- Shared financial spaces
 
 ---
 
-# 🛠 Tech Stack
+## 🛠 Tech Stack
 
-## Front-End
+### Front-End
 
-- Next.js 15 (App Router)
+- Next.js 15
 - React
 - TypeScript
 - Tailwind CSS
 - shadcn/ui
 
-## Back-End
+### Back-End
 
 - Next.js API Routes
 - Auth.js
 - Prisma ORM
+- Server-side validation
 
-## Database
+### Database
 
 - PostgreSQL
 
-## Tools
+### Development Tools
 
 - Docker
-- Git
+- Git / GitHub
 - Postman
 - VS Code
 
 ---
 
-# 🏗 Architecture
+## 🏗 Architecture
 
 ```text
-                User
-                  │
-                  ▼
-      React / Next.js (Frontend)
-                  │
-                  ▼
-        Next.js API Routes
-                  │
-        Authentication (Auth.js)
-                  │
-                  ▼
-            Prisma ORM
-                  │
-                  ▼
-            PostgreSQL
+                 User
+                   │
+                   ▼
+          React / Next.js
+                   │
+                   ▼
+          Next.js API Routes
+                   │
+          Authentication
+             (Auth.js)
+                   │
+                   ▼
+              Prisma ORM
+                   │
+                   ▼
+              PostgreSQL
 ```
 
-The application follows a modern Full Stack architecture where:
+FinInsight follows a Full Stack architecture where:
 
-- React provides the user interface.
-- Next.js handles both frontend and backend logic.
-- Auth.js manages authentication.
-- Prisma acts as the ORM.
-- PostgreSQL stores application data.
+- **React and Next.js** provide the user interface.
+- **Next.js API Routes** handle server-side business logic.
+- **Auth.js** manages authentication and user sessions.
+- **Prisma** provides database access through an ORM.
+- **PostgreSQL** stores users and financial data.
 
 ---
 
-# 📂 Project Structure
+## 📂 Project Structure
 
 ```text
-frontend
+frontend/
 │
-├── app
-│   ├── api
-│   ├── dashboard
-│   ├── login
-│   ├── signup
-│   └── transactions
+├── app/
+│   ├── accounts/
+│   ├── api/
+│   │   ├── accounts/
+│   │   ├── budgets/
+│   │   ├── categories/
+│   │   ├── dashboard/
+│   │   └── transactions/
+│   ├── categories/
+│   ├── dashboard/
+│   ├── login/
+│   ├── signup/
+│   └── transactions/
 │
-├── components
-├── hooks
-├── lib
-├── prisma
-├── public
+├── components/
+├── hooks/
+├── lib/
+├── prisma/
+├── public/
 │
 ├── auth.ts
 ├── prisma.config.ts
@@ -137,54 +180,60 @@ frontend
 └── tsconfig.json
 ```
 
-### Folder description
-
-| Folder | Description |
-|---------|-------------|
-| app | Application pages and API routes |
-| components | Reusable React components |
-| hooks | Custom React hooks |
-| lib | Utility functions and shared configuration |
-| prisma | Prisma schema and database configuration |
-| public | Static assets |
-
 ---
 
-# 🔒 Security
+## 🔒 Security
 
-The project includes several security mechanisms:
+FinInsight includes several security mechanisms:
 
-- Secure authentication using Auth.js
+- Authentication using Auth.js
 - Password hashing with bcrypt
+- Protected application routes
 - Protected API routes
 - User ownership verification
-- Server-side validation
-- Environment variables for sensitive data
+- Server-side input validation
+- Environment variables for sensitive configuration
+- User data isolation
 
 ---
 
-# 🚀 Getting Started
+## 🚀 Getting Started
 
-Clone the repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/FinInsight.git
+cd FinInsight/frontend
 ```
 
-Install dependencies
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-Configure your environment variables
+### 3. Configure environment variables
+
+Create a `.env` file and configure the required environment variables:
 
 ```env
 DATABASE_URL=
 AUTH_SECRET=
 ```
 
-Run the development server
+### 4. Apply database migrations
+
+```bash
+npx prisma migrate deploy
+```
+
+### 5. Generate Prisma Client
+
+```bash
+npx prisma generate
+```
+
+### 6. Start the development server
 
 ```bash
 npm run dev
@@ -192,37 +241,43 @@ npm run dev
 
 ---
 
-# 📅 Roadmap
+## 📅 Roadmap
 
-- [x] Authentication
+- [x] User authentication
+- [x] Protected user sessions
 - [x] Dashboard
 - [x] Transactions CRUD
-- [x] User sessions
-- [ ] Categories management
-- [ ] Budget management
+- [x] Categories management
+- [x] Multiple account management
+- [x] Internal transfers
+- [x] Monthly budgets
 - [ ] Financial goals
-- [ ] Expense analytics
-- [ ] Export data
+- [ ] Advanced financial insights
+- [ ] Data export
 - [ ] Notifications
+- [ ] Bank account connections
+- [ ] Shared financial spaces
 
 ---
 
-# 🎯 Why this project?
+## 🎯 Why this project?
 
-I created FinInsight to improve my Full Stack development skills by building a complete application similar to those used in real-world environments.
+I created FinInsight to strengthen my Full Stack development skills by designing and implementing a complete financial application.
 
 Throughout this project, I focused on:
 
-- Designing a scalable architecture
-- Building secure APIs
-- Managing relational databases
-- Implementing authentication
-- Applying clean code principles
-- Developing a modern user interface
+- Designing a scalable Full Stack architecture
+- Building REST-style API endpoints
+- Managing relational data with Prisma and PostgreSQL
+- Implementing authentication and authorization
+- Applying business rules to financial data
+- Validating and securing server-side operations
+- Building reusable React components
+- Creating a modern and responsive user interface
 
 ---
 
-# 👩‍💻 Author
+## 👩‍💻 Author
 
 **Julie Rajaratnam**
 

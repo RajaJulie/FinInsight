@@ -1,6 +1,8 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import Image from "next/image"
+
 import {
   Card,
   CardContent,
@@ -9,58 +11,103 @@ import {
 } from "@/components/ui/card"
 import { LightbulbIcon } from "lucide-react"
 
+type MonthlyInsightData = {
+  category: string | null
+  currentAmount: number
+  previousAmount: number
+  percentageChange: number
+  trend: "increase" | "neutral"
+  message: string
+  advice: string
+}
 
-const budget = 1600
-const spent = 1200
-
-const score = Math.round((budget - spent) / budget * 100)
-
-const plantImage =
-  score < 40
-    ? "/plants/plant-dead.png"
-    : score < 70
-    ? "/plants/plant-sprout.png"
-    : "/plants/plant-healthy.png"
+type DashboardSummary = {
+  monthlyInsight: MonthlyInsightData
+}
 
 export function MonthlyInsight() {
+  const [insight, setInsight] = useState<MonthlyInsightData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function fetchMonthlyInsight() {
+      try {
+        const response = await fetch("/api/dashboard/summary", {
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          throw new Error("Impossible de charger l’insight du mois.")
+        }
+
+        const data: DashboardSummary = await response.json()
+
+        setInsight(data.monthlyInsight)
+        setError("")
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return
+        }
+
+        setError("Impossible de charger l’insight du mois.")
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void fetchMonthlyInsight()
+
+    return () => controller.abort()
+  }, [])
+
+  const plantImage =
+    insight?.trend === "increase"
+      ? "/plants/plant-sprout.png"
+      : "/plants/plant-healthy.png"
+
   return (
-    <Card className="border-[#13223a] bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LightbulbIcon className="h-5 w-5 text-white/80" />
+    <Card className="w-full min-w-0 border-[#13223a] bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
+      <CardHeader className="min-w-0">
+        <CardTitle className="flex min-w-0 flex-wrap items-center gap-2 break-words">
+          <LightbulbIcon className="h-5 w-5 shrink-0 text-white/80" />
           Insight du mois
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-green-500/10">
-            <img
+      <CardContent className="min-w-0 space-y-4">
+        <div className="flex min-w-0 flex-col items-center gap-4 @[420px]/card:flex-row @[420px]/card:items-center">
+          <div className="flex aspect-square w-full max-w-28 shrink-0 items-center justify-center rounded-2xl bg-green-500/10">
+            <Image
               src={plantImage}
               alt="Santé financière"
-              className="h-106 w-106 object-contain"
+              width={112}
+              height={112}
+              className="h-auto w-full object-contain"
             />
           </div>
 
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Vos dépenses en{" "}
-              <span className="font-semibold text-white">Alimentation</span>{" "}
-              ont augmenté de{" "}
-              <span className="font-semibold text-orange-400">18%</span>{" "}
-              par rapport au mois dernier.
-            </p>
+          <div className="min-w-0 space-y-3 break-words text-center text-sm text-muted-foreground @[420px]/card:text-left">
+            {isLoading && <p>Analyse de vos dépenses...</p>}
 
-            <p>
-              Essayez de définir un budget plus bas ou de suivre vos dépenses
-              plus régulièrement.
-            </p>
+            {!isLoading && error && (
+              <p role="alert" className="text-red-400">
+                {error}
+              </p>
+            )}
+
+            {!isLoading && !error && insight && (
+              <>
+                <p>{insight.message}</p>
+                <p>{insight.advice}</p>
+              </>
+            )}
           </div>
         </div>
-
-        <Button variant="outline" className="w-full">
-          Voir mes conseils
-        </Button>
       </CardContent>
     </Card>
   )

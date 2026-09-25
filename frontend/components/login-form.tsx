@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import React from "react";
+import { signIn } from "next-auth/react";
+import { useState } from "react"; 
 
 
 export function LoginForm({
@@ -19,9 +21,25 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"form">) {
   const router = useRouter()
+  
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
 
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setError("")
+
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    })
+
+    if (result?.error) {
+      setError("Email ou mot de passe incorrect")
+      return
+    }
     router.push("/dashboard")
   }
   return (
@@ -40,6 +58,8 @@ export function LoginForm({
             type="email"
             placeholder="julie@example.com"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
             title="Veuillez entrer un email valide avec un point."
             className="bg-background"
@@ -59,10 +79,14 @@ export function LoginForm({
             id="password"
             type="password"
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="bg-background"
           />
         </Field>
+        
         <Field>
+          {error && <p className="text-sm text-red-500">{error}</p>}
           <Button type="submit" >Login</Button>
         </Field>
         <FieldSeparator>Or continue with</FieldSeparator>

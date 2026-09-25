@@ -1,7 +1,8 @@
 "use client"
 
+import Image from "next/image"
+
 import { SignupForm } from "@/components/signup-form"
-import { GalleryVerticalEndIcon } from "lucide-react"
 
 
 export default function SignupPage() {
@@ -16,10 +17,13 @@ export default function SignupPage() {
         </div>
       </div>
       <div className="relative hidden bg-muted lg:block">
-        <img
+        <Image
           src="/logo.png"
           alt="Spendsense"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+          fill
+          priority
+          sizes="50vw"
+          className="object-cover"
         />
       </div>
     </div>

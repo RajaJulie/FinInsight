@@ -1,52 +1,24 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {
-  Home,
-  ListChecks,
-  CircleDollarSign,
-  CreditCard,
-  Folder,
-  Target,
-  BarChart3,
-  Bell,
-  Settings,
-  CircleHelp,
-  Tags,
-  ChartPie,
-} from "lucide-react"
+import { CircleHelp, Settings } from "lucide-react"
+import { mainNavigationItems } from "@/lib/navigation"
 
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "logo.png",
-  },
-  navMain: [
-    { title: "Tableau de bord", url: "/dashboard", icon: <Home /> },
-    { title: "Transactions", url: "#", icon: <ListChecks /> },
-    { title: "Catégories", url: "#", icon: <Tags /> },
-    { title: "Comptes", url: "#", icon: <CreditCard /> },
-    { title: "Budgets", url: "#", icon: <ChartPie /> },
-    { title: "Objectifs", url: "#", icon: <Target /> },
-    { title: "Insights", url: "#", icon: <BarChart3 /> },
-    { title: "Alertes", url: "#", icon: <Bell /> },
-  ],
   /*navClouds: [
     {
       title: "Insights",
@@ -146,17 +118,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="/dashboard">
-                <img
-                  src="/logo-dark.png"
+              <a href="/dashboard" >
+                <Image
+                  src="/FinInsight_transparent.png"
                   alt="SpendSense"
-                  className="hidden dark:block h-30 w-auto"
+                  width={2000}
+                  height={2000}
+                  sizes="160px"
+                  className="hidden h-40 w-auto dark:block"
                 />
 
-                <img
-                  src="/logo-light.png"
+                <Image
+                  src="/FinInsight_light_transparent.png"
                   alt="SpendSense"
-                  className="block dark:hidden h-30 w-auto"
+                  width={2000}
+                  height={2000}
+                  sizes="160px"
+                  className="block h-40 w-auto dark:hidden"
                 />
               </a>
             </SidebarMenuButton>
@@ -164,12 +142,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={mainNavigationItems} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      
     </Sidebar>
   )
 }
