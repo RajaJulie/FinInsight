@@ -102,10 +102,38 @@ export async function GET(request: Request) {
         group._sum.amount ?? 0,
       ])
     )
+    const monthlyIncomeAggregate = await prisma.transaction.aggregate({
+      where: {
+        userId: user.id,
+        type: "INCOME",
+        date: {
+          gte: start,
+          lt: end,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    })
+    const monthlyIncome = monthlyIncomeAggregate._sum.amount ?? 0
+    const budgetAllocated = budgets.reduce(
+      (total, budget) => total + budget.amount,
+      0
+    )
+    const spent = Array.from(spentByCategory.values()).reduce(
+      (total, amount) => total + amount,
+      0
+    )
 
     return NextResponse.json({
       month,
       year,
+      summary: {
+        monthlyIncome,
+        budgetAllocated,
+        spent,
+        toAllocate: monthlyIncome - budgetAllocated,
+      },
       budgets: budgets.map((budget) => {
         const spent = spentByCategory.get(budget.categoryId) ?? 0
 

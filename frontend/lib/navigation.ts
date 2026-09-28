@@ -18,7 +18,7 @@ export const mainNavigationItems: NavigationItem[] = [
   { title: "Transactions", url: "/transactions", icon: "transactions" },
   { title: "Catégories", url: "/categories", icon: "categories" },
   { title: "Comptes", url: "/accounts", icon: "accounts" },
-  { title: "Budgets", url: "#", icon: "budgets" },
+  { title: "Budgets", url: "/budgets", icon: "budgets" },
   { title: "Objectifs", url: "#", icon: "goals" },
   { title: "Insights", url: "#", icon: "insights" },
 ]
