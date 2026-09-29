@@ -32,6 +32,10 @@ enum AccountStatus {
   ARCHIVED
 }
 
+enum RecurringFrequency {
+  MONTHLY
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -39,10 +43,11 @@ model User {
   password  String
   createdAt DateTime @default(now())
 
-  transactions Transaction[]
-  categories   Category[]
-  accounts     Account[]
-  budgets      Budget[]
+  transactions          Transaction[]
+  categories            Category[]
+  accounts              Account[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
 }
 
 model Transaction {
@@ -82,8 +87,9 @@ model Category {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  transactions Transaction[]
-  budgets      Budget[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -126,12 +132,40 @@ model Account {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  transactions      Transaction[] @relation("SourceAccountTransactions")
-  incomingTransfers Transaction[] @relation("DestinationAccountTransfers")
+  transactions          Transaction[]          @relation("SourceAccountTransactions")
+  incomingTransfers     Transaction[]          @relation("DestinationAccountTransfers")
+  recurringTransactions RecurringTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, name])
   @@index([userId, status])
+}
+
+model RecurringTransaction {
+  id         String             @id @default(cuid())
+  title      String
+  amount     Float
+  type       TransactionType
+  frequency  RecurringFrequency @default(MONTHLY)
+  dayOfMonth Int
+  active     Boolean            @default(true)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, active])
+  @@index([userId, frequency])
+  @@index([categoryId])
+  @@index([accountId])
 }

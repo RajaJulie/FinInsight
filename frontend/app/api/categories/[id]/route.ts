@@ -38,6 +38,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           select: {
             transactions: true,
             budgets: true,
+            recurringTransactions: true,
           },
         },
       },
@@ -76,12 +77,14 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (
       validation.data.type &&
       validation.data.type !== category.type &&
-      (category._count.transactions > 0 || category._count.budgets > 0)
+      (category._count.transactions > 0 ||
+        category._count.budgets > 0 ||
+        category._count.recurringTransactions > 0)
     ) {
       return NextResponse.json(
         {
           message:
-            "Le type ne peut pas être modifié tant que des transactions utilisent cette catégorie.",
+            "Le type ne peut pas être modifié tant que des transactions, budgets ou opérations récurrentes utilisent cette catégorie.",
         },
         { status: 409 }
       )
@@ -165,6 +168,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
           select: {
             transactions: true,
             budgets: true,
+            recurringTransactions: true,
           },
         },
       },
@@ -192,6 +196,16 @@ export async function DELETE(_request: Request, context: RouteContext) {
         {
           message:
             "Cette catégorie est utilisée par des budgets et ne peut pas être supprimée.",
+        },
+        { status: 409 }
+      )
+    }
+
+    if (category._count.recurringTransactions > 0) {
+      return NextResponse.json(
+        {
+          message:
+            "Cette catégorie est utilisée par des opérations récurrentes et ne peut pas être supprimée.",
         },
         { status: 409 }
       )

@@ -36,6 +36,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           select: {
             transactions: true,
             incomingTransfers: true,
+            recurringTransactions: true,
           },
         },
       },
@@ -209,6 +210,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
           select: {
             transactions: true,
             incomingTransfers: true,
+            recurringTransactions: true,
           },
         },
       },
@@ -223,12 +225,13 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     if (
       account._count.transactions > 0 ||
-      account._count.incomingTransfers > 0
+      account._count.incomingTransfers > 0 ||
+      account._count.recurringTransactions > 0
     ) {
       return NextResponse.json(
         {
           message:
-            "Ce compte contient des transactions et doit être archivé plutôt que supprimé.",
+            "Ce compte contient des transactions ou opérations récurrentes et doit être archivé plutôt que supprimé.",
         },
         { status: 409 }
       )
