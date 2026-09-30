@@ -28,6 +28,11 @@ export type DetectableRecurringTransaction = {
   dayOfMonth: number
   active: boolean
   accountId: string
+  detectionTitleNorm?: string | null
+  detectionAccountId?: string | null
+  detectionType?: DetectableTransactionType | null
+  sourceTransactionIds?: string[]
+  sourceTransactions?: RecurringSuggestionOccurrence[]
 }
 
 export type RecurringSuggestionOccurrence = {
@@ -178,7 +183,14 @@ function buildSuggestionsForGroup(
   const sortedTransactions = [...group.transactions].sort(
     (first, second) => toDate(first.date).getTime() - toDate(second.date).getTime()
   )
-  const candidateSequences = getCandidateSequences(sortedTransactions).filter(
+  const availableTransactions = sortedTransactions.filter(
+    (transaction) =>
+      !isTransactionCoveredByConfirmedDetection(
+        transaction,
+        activeRecurringTransactions
+      )
+  )
+  const candidateSequences = getCandidateSequences(availableTransactions).filter(
     (candidate) =>
       !isAlreadyConfirmedRecurringSuggestion(
         buildSuggestionFromSequence(candidate.transactions),
@@ -560,6 +572,14 @@ function isAlreadyConfirmedRecurringSuggestion(
   recurringTransactions: DetectableRecurringTransaction[]
 ) {
   return recurringTransactions.some((recurringTransaction) => {
+    if (isDetectionConfirmedSuggestion(suggestion, recurringTransaction)) {
+      return true
+    }
+
+    if (hasDetectionIdentity(recurringTransaction)) {
+      return false
+    }
+
     if (recurringTransaction.type !== suggestion.type) return false
     if (recurringTransaction.accountId !== suggestion.accountId) return false
     if (
@@ -581,6 +601,131 @@ function isAlreadyConfirmedRecurringSuggestion(
       suggestion.estimatedAmount
     )
   })
+}
+
+function isDetectionConfirmedSuggestion(
+  suggestion: RecurringTransactionSuggestion,
+  recurringTransaction: DetectableRecurringTransaction
+) {
+  if (!hasDetectionIdentity(recurringTransaction)) {
+    return false
+  }
+
+  if (recurringTransaction.detectionType !== suggestion.type) return false
+  if (recurringTransaction.detectionAccountId !== suggestion.accountId) {
+    return false
+  }
+  if (
+    recurringTransaction.detectionTitleNorm !==
+    normalizeRecurringTitle(suggestion.title)
+  ) {
+    return false
+  }
+
+  return hasConfirmedSourceContinuity(suggestion, recurringTransaction)
+}
+
+function hasDetectionIdentity(
+  recurringTransaction: DetectableRecurringTransaction
+) {
+  return Boolean(
+    recurringTransaction.detectionTitleNorm &&
+      recurringTransaction.detectionAccountId &&
+      recurringTransaction.detectionType
+  )
+}
+
+function hasConfirmedSourceContinuity(
+  suggestion: RecurringTransactionSuggestion,
+  recurringTransaction: DetectableRecurringTransaction
+) {
+  const sourceTransactionIds = getRecurringSourceTransactionIds(
+    recurringTransaction
+  )
+
+  if (sourceTransactionIds.length === 0) return false
+
+  const suggestionTransactionIds = new Set(
+    suggestion.occurrences.map((occurrence) => occurrence.transactionId)
+  )
+
+  if (sourceTransactionIds.every((transactionId) =>
+    suggestionTransactionIds.has(transactionId)
+  )) {
+    return true
+  }
+
+  const overlapCount = sourceTransactionIds.filter((transactionId) =>
+    suggestionTransactionIds.has(transactionId)
+  ).length
+
+  return overlapCount > 0
+}
+
+function isTransactionCoveredByConfirmedDetection(
+  transaction: DetectableTransaction,
+  recurringTransactions: DetectableRecurringTransaction[]
+) {
+  return recurringTransactions.some((recurringTransaction) => {
+    if (!hasDetectionIdentity(recurringTransaction)) return false
+    if (recurringTransaction.detectionType !== transaction.type) return false
+    if (recurringTransaction.detectionAccountId !== transaction.accountId) {
+      return false
+    }
+    if (
+      recurringTransaction.detectionTitleNorm !==
+      normalizeRecurringTitle(transaction.title)
+    ) {
+      return false
+    }
+
+    const sourceTransactionIds = getRecurringSourceTransactionIds(
+      recurringTransaction
+    )
+
+    if (sourceTransactionIds.includes(transaction.id)) return true
+
+    return isFutureContinuationOfConfirmedDetection(
+      transaction,
+      recurringTransaction
+    )
+  })
+}
+
+function isFutureContinuationOfConfirmedDetection(
+  transaction: DetectableTransaction,
+  recurringTransaction: DetectableRecurringTransaction
+) {
+  const sources = recurringTransaction.sourceTransactions ?? []
+
+  if (sources.length < MIN_OCCURRENCES) return false
+
+  const sourceDates = sources.map((source) => toDate(source.date))
+  const latestSourceMonth = Math.max(...sourceDates.map(getMonthIndex))
+
+  if (getMonthIndex(toDate(transaction.date)) <= latestSourceMonth) {
+    return false
+  }
+
+  const estimatedDay = estimateRecurringDayOfMonth(sourceDates)
+  const isDayCoherent =
+    Math.abs(toDate(transaction.date).getUTCDate() - estimatedDay) <=
+    MONTHLY_DAY_TOLERANCE_DAYS
+
+  if (!isDayCoherent) return false
+
+  return isAmountWithinRecurringTolerance([
+    ...sources.map((source) => source.amount),
+    transaction.amount,
+  ])
+}
+
+function getRecurringSourceTransactionIds(
+  recurringTransaction: DetectableRecurringTransaction
+) {
+  return recurringTransaction.sourceTransactions?.map(
+    (source) => source.transactionId
+  ) ?? recurringTransaction.sourceTransactionIds ?? []
 }
 
 function isAmountWithinConfirmedRecurringTolerance(

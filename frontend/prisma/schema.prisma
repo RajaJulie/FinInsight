@@ -62,10 +62,11 @@ model Transaction {
   date                 DateTime        @default(now())
 
   userId             String
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categoryRelation   Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  account            Account?  @relation("SourceAccountTransactions", fields: [accountId], references: [id], onDelete: Restrict)
-  destinationAccount Account?  @relation("DestinationAccountTransfers", fields: [destinationAccountId], references: [id], onDelete: Restrict)
+  user               User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryRelation   Category?                    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account            Account?                     @relation("SourceAccountTransactions", fields: [accountId], references: [id], onDelete: Restrict)
+  destinationAccount Account?                     @relation("DestinationAccountTransfers", fields: [destinationAccountId], references: [id], onDelete: Restrict)
+  recurringSources   RecurringTransactionSource[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,6 +153,10 @@ model RecurringTransaction {
   dayOfMonth Int
   active     Boolean            @default(true)
 
+  detectionTitleNorm String?
+  detectionAccountId String?
+  detectionType      TransactionType?
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -161,11 +166,30 @@ model RecurringTransaction {
   accountId String
   account   Account @relation(fields: [accountId], references: [id], onDelete: Restrict)
 
+  sourceTransactions RecurringTransactionSource[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId, active])
   @@index([userId, frequency])
+  @@index([detectionType, detectionTitleNorm, detectionAccountId])
   @@index([categoryId])
   @@index([accountId])
+}
+
+model RecurringTransactionSource {
+  id String @id @default(cuid())
+
+  recurringTransactionId String
+  recurringTransaction   RecurringTransaction @relation(fields: [recurringTransactionId], references: [id], onDelete: Cascade)
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([recurringTransactionId, transactionId])
+  @@unique([transactionId])
+  @@index([transactionId])
 }

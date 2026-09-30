@@ -70,6 +70,21 @@ export async function GET() {
           dayOfMonth: true,
           active: true,
           accountId: true,
+          detectionTitleNorm: true,
+          detectionAccountId: true,
+          detectionType: true,
+          sourceTransactions: {
+            select: {
+              transactionId: true,
+              transaction: {
+                select: {
+                  date: true,
+                  amount: true,
+                  title: true,
+                },
+              },
+            },
+          },
         },
       }),
     ])
@@ -80,8 +95,29 @@ export async function GET() {
         }
 
         return [{
-          ...transaction,
+          title: transaction.title,
+          amount: transaction.amount,
           type: transaction.type,
+          frequency: transaction.frequency,
+          dayOfMonth: transaction.dayOfMonth,
+          active: transaction.active,
+          accountId: transaction.accountId,
+          detectionTitleNorm: transaction.detectionTitleNorm,
+          detectionAccountId: transaction.detectionAccountId,
+          detectionType:
+            transaction.detectionType === "INCOME" ||
+            transaction.detectionType === "EXPENSE"
+              ? transaction.detectionType
+              : null,
+          sourceTransactionIds: transaction.sourceTransactions.map(
+            (source) => source.transactionId
+          ),
+          sourceTransactions: transaction.sourceTransactions.map((source) => ({
+            transactionId: source.transactionId,
+            date: source.transaction.date.toISOString(),
+            amount: source.transaction.amount,
+            title: source.transaction.title,
+          })),
         }]
       })
     const suggestions = detectRecurringTransactionSuggestions({

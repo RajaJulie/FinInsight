@@ -25,6 +25,20 @@ export const recurringTransactionSchema = z
   })
   .strict()
 
+export const confirmRecurringTransactionSchema = z
+  .object({
+    suggestionId: z.string().trim().min(1, "La suggestion est obligatoire."),
+    title: recurringTransactionFields.title,
+    amount: recurringTransactionFields.amount,
+    type: recurringTransactionFields.type.optional(),
+    categoryId: recurringTransactionFields.categoryId,
+    accountId: recurringTransactionFields.accountId,
+    frequency: recurringTransactionFields.frequency,
+    dayOfMonth: recurringTransactionFields.dayOfMonth,
+    active: recurringTransactionFields.active.default(true),
+  })
+  .strict()
+
 export const updateRecurringTransactionSchema = z
   .object({
     title: recurringTransactionFields.title.optional(),
