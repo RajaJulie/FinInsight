@@ -2,6 +2,7 @@ import type {
   Account,
   Transaction,
 } from "@/lib/generated/prisma/client"
+import { calculateRecordedAccountBalance } from "./balance"
 
 type AccountWithTransactions = Account & {
   transactions: Pick<Transaction, "amount" | "type" | "date">[]
@@ -9,18 +10,6 @@ type AccountWithTransactions = Account & {
 }
 
 export function serializeAccount(account: AccountWithTransactions) {
-  const transactionBalance = account.transactions.reduce(
-    (balance, transaction) =>
-      balance +
-      (transaction.type === "INCOME"
-        ? transaction.amount
-        : -transaction.amount),
-    0
-  )
-  const incomingTransferBalance = account.incomingTransfers.reduce(
-    (balance, transaction) => balance + transaction.amount,
-    0
-  )
   const activityDates = [
     ...account.transactions.map((transaction) => transaction.date),
     ...account.incomingTransfers.map((transaction) => transaction.date),
@@ -38,8 +27,7 @@ export function serializeAccount(account: AccountWithTransactions) {
     name: account.name,
     type: account.type,
     initialBalance: account.initialBalance,
-    currentBalance:
-      account.initialBalance + transactionBalance + incomingTransferBalance,
+    currentBalance: calculateRecordedAccountBalance(account),
     currency: account.currency,
     icon: account.icon,
     color: account.color,

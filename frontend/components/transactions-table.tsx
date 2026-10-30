@@ -1,6 +1,12 @@
 "use client"
 
+import { notifyFinanceChanged, subscribeFinanceChanges } from "@/lib/finance-events"
+import { buildAccountBalanceHistory, compareTransactionsChronologically } from "@/lib/accounts/history"
+import { useActiveTransaction } from "@/hooks/use-active-transaction"
+import { TransactionBalancePanel } from "@/components/transactions/transaction-balance-panel"
+
 import { useEffect, useMemo, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -36,11 +42,16 @@ type Transaction = {
   account: { id: string; name: string } | null
   destinationAccount: { id: string; name: string } | null
   date: string
+  createdAt?: string
 }
 
 type Account = {
   id: string
   name: string
+  initialBalance: number
+  type: string
+  status: string
+  currency: string
 }
 
 type AccountsResponse = {
@@ -50,11 +61,9 @@ type AccountsResponse = {
 type TransactionTypeFilter = "ALL" | Transaction["type"]
 
 const transactionGridClassName =
-  "grid grid-cols-[112px_minmax(180px,1fr)_minmax(280px,1.35fr)_160px_132px_96px] gap-x-6"
+  "md:grid-cols-[112px_minmax(180px,1fr)_minmax(240px,1.35fr)_140px_132px_96px] md:gap-x-5"
 
-function getLocalDayStart(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
-}
+const dateFormatter = new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC" })
 
 function getDateInputParts(value: string) {
   if (!value) {
@@ -169,6 +178,13 @@ function parseDateSearch(value: string) {
 }
 
 export function TransactionsTable() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const requestedAccountId = searchParams.get("accountId") || null
+  const accountFilter = requestedAccountId
+    ? `ACCOUNT:${requestedAccountId}`
+    : searchParams.get("accountView") === "all" ? "ALL_ACCOUNTS" : "ALL"
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [selectedTransaction, setSelectedTransaction] =
@@ -178,8 +194,8 @@ export function TransactionsTable() {
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>("ALL")
   const [categoryFilter, setCategoryFilter] = useState("ALL")
-  const [accountFilter, setAccountFilter] = useState("ALL")
   const [dateFilter, setDateFilter] = useState("")
+  const [chronologicalOrder, setChronologicalOrder] = useState("DESC")
   const datePickerRef = useRef<HTMLInputElement | null>(null)
   const [transactionToDelete, setTransactionToDelete] =
     useState<Transaction | null>(null)
@@ -189,10 +205,22 @@ export function TransactionsTable() {
   const [error, setError] = useState("")
   const [deleteError, setDeleteError] = useState("")
 
+  function setAccountFilter(value: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("accountId")
+    params.delete("accountView")
+    if (value.startsWith("ACCOUNT:")) params.set("accountId", value.slice("ACCOUNT:".length))
+    if (value === "ALL_ACCOUNTS") params.set("accountView", "all")
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
+
   useEffect(() => {
     let isMounted = true
+    let sequence = 0
 
     async function fetchTransactions() {
+      const requestId = ++sequence
       try {
         const [transactionsResponse, accountsResponse] = await Promise.all([
           fetch("/api/transactions"),
@@ -211,28 +239,43 @@ export function TransactionsTable() {
           (await transactionsResponse.json()) as Transaction[]
         const accountsData = (await accountsResponse.json()) as AccountsResponse
 
-        if (isMounted) {
+        if (isMounted && requestId === sequence) {
           setTransactions(transactionsData)
           setAccounts(accountsData.accounts)
           setError("")
         }
       } catch {
-        if (isMounted) {
+        if (isMounted && requestId === sequence) {
           setError("Impossible de charger les transactions.")
         }
       } finally {
-        if (isMounted) {
+        if (isMounted && requestId === sequence) {
           setIsLoading(false)
         }
       }
     }
 
-    fetchTransactions()
+    void fetchTransactions()
+    const unsubscribe = subscribeFinanceChanges(() => void fetchTransactions())
 
     return () => {
       isMounted = false
+      unsubscribe()
     }
   }, [])
+
+  const balanceHistory = useMemo(() => buildAccountBalanceHistory({
+    accounts,
+    transactions,
+    selectedAccountIds: accountFilter === "ALL" ? undefined
+      : accountFilter === "ALL_ACCOUNTS" ? accounts.filter(account => account.currency === "EUR").map(account => account.id)
+      : accounts.some(account => account.id === requestedAccountId && account.currency === "EUR") ? [requestedAccountId!] : [],
+  }), [accounts, transactions, accountFilter, requestedAccountId])
+  const balancesAfter = useMemo(() => new Map(balanceHistory.entries.map(entry => [entry.transactionId, entry.afterCents / 100])), [balanceHistory])
+  const selectedAccountNames = accounts.filter(account => balanceHistory.selectedAccountIds.includes(account.id)).map(account => account.name).join(" + ")
+  const missingRequestedAccount = requestedAccountId !== null && !accounts.some(account => account.id === requestedAccountId)
+  const unavailableRequestedAccount = !isLoading && !error && requestedAccountId !== null &&
+    !accounts.some(account => account.id === requestedAccountId && account.currency === "EUR")
 
   const categoryOptions = useMemo(() => {
     const uniqueCategories = new Set<string>()
@@ -253,11 +296,11 @@ export function TransactionsTable() {
     const dateSearch = parseDateSearch(dateFilter)
 
     return transactions.filter((transaction) => {
-      const transactionDay = getLocalDayStart(new Date(transaction.date))
+      const transactionDay = new Date(transaction.date)
       const transactionDateParts = {
-        day: transactionDay.getDate(),
-        month: transactionDay.getMonth() + 1,
-        year: transactionDay.getFullYear(),
+        day: transactionDay.getUTCDate(),
+        month: transactionDay.getUTCMonth() + 1,
+        year: transactionDay.getUTCFullYear(),
       }
       const matchesSearch =
         normalizedSearch.length === 0 ||
@@ -266,11 +309,7 @@ export function TransactionsTable() {
         typeFilter === "ALL" || transaction.type === typeFilter
       const matchesCategory =
         categoryFilter === "ALL" || transaction.category === categoryFilter
-      const matchesAccount =
-        accountFilter === "ALL" ||
-        transaction.accountId === accountFilter ||
-        (transaction.type === "TRANSFER" &&
-          transaction.destinationAccountId === accountFilter)
+      const matchesAccount = balancesAfter.has(transaction.id)
       const matchesDate =
         !dateSearch.isActive ||
         (dateSearch.isValid &&
@@ -287,15 +326,23 @@ export function TransactionsTable() {
         matchesAccount &&
         matchesDate
       )
-    })
+    }).sort((first, second) => chronologicalOrder === "ASC"
+      ? compareTransactionsChronologically(first, second)
+      : compareTransactionsChronologically(second, first))
   }, [
-    accountFilter,
+    balancesAfter,
+    chronologicalOrder,
     categoryFilter,
     dateFilter,
     searchQuery,
     transactions,
     typeFilter,
   ])
+
+  const visibleTransactionIds = useMemo(() => filteredTransactions.map(transaction => transaction.id), [filteredTransactions])
+  const { listRef, panelRef, activeId, focusTransaction, activateFocusedTransaction } = useActiveTransaction(visibleTransactionIds, accountFilter)
+  const activeIndex = filteredTransactions.findIndex(transaction => transaction.id === activeId)
+  const activeTransaction = activeIndex >= 0 ? filteredTransactions[activeIndex] : null
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
@@ -371,6 +418,7 @@ export function TransactionsTable() {
         )
       )
       setTransactionToDelete(null)
+      notifyFinanceChanged()
     } catch (error) {
       setDeleteError(
         error instanceof Error
@@ -442,15 +490,16 @@ export function TransactionsTable() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Card className="bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
+      <Card className="min-w-0 bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
         <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px_220px_220px_180px]">
-            <div className="relative min-w-0">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_160px_180px_220px_160px]">
+            <div className="relative min-w-0 sm:col-span-2 xl:col-span-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Rechercher une transaction..."
+                aria-label="Rechercher une transaction"
                 className="pl-9"
               />
             </div>
@@ -461,7 +510,7 @@ export function TransactionsTable() {
                 setTypeFilter(value as TransactionTypeFilter)
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="Type de transaction">
                 <SelectValue placeholder="Tous les types" />
               </SelectTrigger>
               <SelectContent>
@@ -473,7 +522,7 @@ export function TransactionsTable() {
             </Select>
 
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" aria-label="Catégorie de transaction">
                 <SelectValue placeholder="Toutes les catégories" />
               </SelectTrigger>
               <SelectContent>
@@ -487,13 +536,17 @@ export function TransactionsTable() {
             </Select>
 
             <Select value={accountFilter} onValueChange={setAccountFilter}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tous les comptes" />
+              <SelectTrigger className="w-full" aria-label="Compte ou vue combinée">
+                <SelectValue placeholder={requestedAccountId ? "Chargement du compte..." : "Combiné"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Tous les comptes</SelectItem>
+                <SelectItem value="ALL">Combiné</SelectItem>
+                <SelectItem value="ALL_ACCOUNTS">Tous les comptes</SelectItem>
+                {missingRequestedAccount && (
+                  <SelectItem value={accountFilter} disabled>{isLoading ? "Chargement du compte..." : "Compte indisponible"}</SelectItem>
+                )}
                 {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
+                  <SelectItem key={account.id} value={`ACCOUNT:${account.id}`} disabled={account.currency !== "EUR"}>
                     {account.name}
                   </SelectItem>
                 ))}
@@ -541,17 +594,44 @@ export function TransactionsTable() {
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
+      <section className="relative min-w-0 space-y-4" aria-label="Historique des transactions">
+      <TransactionBalancePanel
+        panelRef={panelRef}
+        transaction={activeTransaction}
+        amount={activeTransaction ? balancesAfter.get(activeTransaction.id) ?? null : null}
+        scopeLabel={selectedAccountNames}
+        loading={isLoading}
+        onPrevious={activeIndex > 0 ? () => focusTransaction(visibleTransactionIds[activeIndex - 1]) : undefined}
+        onNext={activeIndex >= 0 && activeIndex < visibleTransactionIds.length - 1 ? () => focusTransaction(visibleTransactionIds[activeIndex + 1]) : undefined}
+      />
+      <Card className="min-w-0 bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
         <CardHeader>
-          <CardTitle>Liste des transactions</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle>Liste des transactions</CardTitle>
+            <Select value={chronologicalOrder} onValueChange={setChronologicalOrder}>
+              <SelectTrigger className="w-full sm:w-56" aria-label="Ordre des transactions"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DESC">Plus récentes d’abord</SelectItem>
+                <SelectItem value="ASC">Plus anciennes d’abord</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="break-words text-sm text-white/70">{selectedAccountNames || (unavailableRequestedAccount ? "Compte indisponible" : "Aucun compte disponible")}</p>
+          {unavailableRequestedAccount && <p role="alert" className="text-sm text-amber-200">Ce compte est introuvable ou indisponible. Sélectionnez un autre compte ou la vue Tous les comptes.</p>}
+          <details className="text-xs leading-relaxed text-white/70">
+            <summary className="w-fit cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2">Comprendre les soldes affichés</summary>
+            <p className="mt-2">Soldes calculés à partir des soldes initiaux enregistrés et de toutes les opérations disponibles, avant les filtres. Historique non rapproché avec la banque ; les périodes antérieures à la première opération ne sont pas reconstituées.</p>
+            <p className="mt-2">À date identique, les opérations sont ordonnées par date de création puis identifiant. Cet ordre technique ne garantit pas l’ordre d’exécution bancaire.</p>
+          </details>
+          <p className="text-xs text-amber-200">Soldes calculés, non vérifiés auprès de la banque.</p>
           {error && <p className="text-sm text-red-400">{error}</p>}
         </CardHeader>
 
         <CardContent>
           <div className="overflow-x-auto">
-            <div className="min-w-[1100px]">
+            <div className="md:min-w-[1080px]">
               <div
-                className={`${transactionGridClassName} rounded-lg bg-white/5 px-4 py-3 text-sm text-white/60`}
+                className={`${transactionGridClassName} hidden rounded-lg bg-white/5 px-4 py-3 text-sm text-white/60 md:grid`}
               >
                 <span>Date</span>
                 <span>Description</span>
@@ -561,6 +641,7 @@ export function TransactionsTable() {
                 <span className="text-right">Actions</span>
               </div>
 
+              <div ref={listRef} id="transaction-history" role="list" aria-label="Transactions">
               {isLoading && (
                 <div className="px-4 py-6 text-sm text-white/60">
                   Chargement des transactions...
@@ -585,23 +666,41 @@ export function TransactionsTable() {
                 filteredTransactions.map((transaction) => {
                   const isActionLoading =
                     actionTransactionId === transaction.id
+                  const isActive = transaction.id === activeId
 
                   return (
                     <div
                       key={transaction.id}
-                      className={`${transactionGridClassName} items-center border-b border-white/5 px-4 py-4`}
+                      data-transaction-id={transaction.id}
+                      role="listitem"
+                      tabIndex={0}
+                      aria-current={isActive ? "true" : undefined}
+                      aria-describedby={isActive ? "transaction-active-balance" : undefined}
+                      aria-keyshortcuts="ArrowUp ArrowDown Home End"
+                      onFocusCapture={() => activateFocusedTransaction(transaction.id)}
+                      onKeyDown={event => {
+                        if (event.target !== event.currentTarget) return
+                        const index = visibleTransactionIds.indexOf(transaction.id)
+                        const next = event.key === "ArrowDown" ? index + 1 : event.key === "ArrowUp" ? index - 1
+                          : event.key === "Home" ? 0 : event.key === "End" ? visibleTransactionIds.length - 1 : -1
+                        if (next >= 0 && next < visibleTransactionIds.length) {
+                          event.preventDefault()
+                          focusTransaction(visibleTransactionIds[next])
+                        }
+                      }}
+                      style={{ scrollMarginTop: "var(--balance-scroll-offset, 128px)" }}
+                      className={`${transactionGridClassName} grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-l-2 px-3 py-4 outline-offset-[-2px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-violet-300 motion-reduce:transition-none md:px-4 ${isActive ? "border-l-violet-400 border-b-white/5 bg-violet-500/10" : "border-l-transparent border-b-white/5"}`}
                     >
-                      <span className="whitespace-nowrap text-white/70">
-                        {new Date(transaction.date).toLocaleDateString(
-                          "fr-FR"
-                        )}
+                      <span className="col-start-1 row-start-1 whitespace-nowrap text-xs text-white/70 md:col-auto md:row-auto md:text-sm">
+                        {dateFormatter.format(new Date(transaction.date))}
+                        <span className="md:hidden"> · {transaction.type === "INCOME" ? "Revenu" : transaction.type === "EXPENSE" ? "Dépense" : "Virement"}</span>
                       </span>
 
-                      <span className="min-w-0 break-words pr-2 font-medium text-white">
+                      <span className="col-start-1 row-start-2 min-w-0 break-words pr-2 font-medium text-white md:col-auto md:row-auto">
                         {transaction.title}
                       </span>
 
-                      <div className="min-w-0 pr-2">
+                      <div className="col-start-1 row-start-3 min-w-0 pr-2 md:col-auto md:row-auto">
                         {transaction.type === "TRANSFER" ? (
                           <span className="flex w-full max-w-[320px] flex-col items-start gap-0.5 whitespace-normal rounded-md bg-violet-500/10 px-3 py-2 text-sm leading-5 text-violet-300">
                             <span className="max-w-full break-words">
@@ -624,7 +723,7 @@ export function TransactionsTable() {
                         )}
                       </div>
 
-                      <span className="whitespace-normal pr-2 text-white/80">
+                      <span className="hidden whitespace-normal pr-2 text-white/80 md:block">
                         {transaction.type === "INCOME"
                           ? "Revenu"
                           : transaction.type === "EXPENSE"
@@ -633,7 +732,7 @@ export function TransactionsTable() {
                       </span>
 
                       <span
-                        className={`whitespace-nowrap text-right font-semibold ${
+                        className={`col-start-2 row-start-2 max-w-[42vw] break-words text-right font-semibold md:col-auto md:row-auto md:max-w-none md:whitespace-nowrap ${
                           transaction.type === "INCOME"
                             ? "text-green-400"
                             : transaction.type === "EXPENSE"
@@ -652,11 +751,13 @@ export function TransactionsTable() {
                         })}
                       </span>
 
-                      <div className="flex justify-end gap-2">
+                      <div className="col-start-2 row-start-3 flex justify-end gap-2 md:col-auto md:row-auto">
                         <Button
                           variant="outline"
                           size="icon"
                           disabled={isActionLoading}
+                          aria-label={`Modifier ${transaction.title}`}
+                          title="Modifier"
                           onClick={() => handleEdit(transaction)}
                         >
                           <Pencil className="size-4" />
@@ -665,6 +766,8 @@ export function TransactionsTable() {
                           variant="outline"
                           size="icon"
                           disabled={isActionLoading}
+                          aria-label={`Supprimer ${transaction.title}`}
+                          title="Supprimer"
                           onClick={() => {
                             setTransactionToDelete(transaction)
                             setDeleteError("")
@@ -676,10 +779,12 @@ export function TransactionsTable() {
                     </div>
                   )
                 })}
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
+      </section>
     </>
   )
 }

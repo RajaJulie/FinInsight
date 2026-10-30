@@ -1,12 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   EllipsisVertical,
   Pencil,
   PiggyBank,
+  Repeat,
+  ShieldCheck,
   Plus,
   TrendingUp,
   TriangleAlert,
@@ -18,6 +21,17 @@ import {
 import { toast } from "sonner"
 
 import { BudgetDialog, type BudgetItem } from "@/components/budgets/budget-dialog"
+import { EmergencyReserveDialog } from "@/components/budgets/emergency-reserve-dialog"
+import { MonthlyActualSummarySection } from "@/components/budgets/monthly-actual-summary"
+import type { MonthlyActualSummary } from "@/lib/budgets/actual-summary"
+import type { CumulativeMonthlyResult } from "@/lib/budgets/cumulative-result"
+import { calculateBudgetSummary, type BudgetSummary } from "@/lib/budgets/summary"
+import { RecurringSuggestions } from "@/components/recurring-suggestions"
+import { RecurringTransactions } from "@/components/recurring-transactions"
+import { RecurringPaymentDialog } from "@/components/budgets/recurring-payment-dialog"
+import type { PendingRecurringPayment } from "@/lib/recurring/reconciliation"
+import type { RecurringPaymentSummary } from "@/lib/budgets/recurring-commitments"
+import { subscribeFinanceChanges } from "@/lib/finance-events"
 import { CategoryIcon } from "@/components/categories/category-icon"
 import {
   AlertDialog,
@@ -34,6 +48,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -45,13 +61,10 @@ type BudgetsResponse = {
   year: number
   summary: BudgetSummary
   budgets: BudgetItem[]
-}
-
-type BudgetSummary = {
-  monthlyIncome: number
-  budgetAllocated: number
-  spent: number
-  toAllocate: number
+  pendingPayments: PendingRecurringPayment[]
+  recurringPayments?: RecurringPaymentSummary[]
+  actualSummary?: MonthlyActualSummary
+  cumulativeResult?: CumulativeMonthlyResult
 }
 
 const moneyFormatter = new Intl.NumberFormat("fr-FR", {
@@ -94,19 +107,20 @@ function shiftPeriod(month: number, year: number, offset: number) {
 }
 
 function getEmptySummary(): BudgetSummary {
-  return {
+  return calculateBudgetSummary({
     monthlyIncome: 0,
-    budgetAllocated: 0,
+    recurringCommittedTotal: 0,
+    budgetAmounts: [],
     spent: 0,
-    toAllocate: 0,
-  }
+  })
 }
 
-async function requestBudgets(month: number, year: number) {
+async function requestBudgets(month: number, year: number, accountIds: string[] | null) {
   const params = new URLSearchParams({
     month: String(month),
     year: String(year),
   })
+  if (accountIds !== null) params.set("accountIds", accountIds.join(","))
   const response = await fetch(`/api/budgets?${params}`)
   const data = (await response.json()) as BudgetsResponse & {
     message?: string
@@ -124,11 +138,13 @@ function SummaryCard({
   value,
   description,
   icon: Icon,
+  action,
 }: {
   title: string
   value: string
   description: string
   icon: LucideIcon
+  action?: ReactNode
 }) {
   return (
     <Card className="min-w-0 border-[#13223a] bg-gradient-to-t from-[#071226] to-[#0b1d3a]">
@@ -136,10 +152,11 @@ function SummaryCard({
         <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
           <Icon aria-hidden="true" className="size-5" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="truncate text-xl font-semibold text-white">{value}</p>
-          <p className="truncate text-xs text-muted-foreground">{description}</p>
+          <p className="break-words text-xl font-semibold text-white">{value}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+          {action}
         </div>
       </CardContent>
     </Card>
@@ -155,12 +172,6 @@ function BudgetCard({
   onEdit: (budget: BudgetItem) => void
   onDelete: (budget: BudgetItem) => void
 }) {
-  const progressWidth = Math.min(budget.percentage, 100)
-  const isOverBudget = budget.remaining < 0
-  const statusLabel = isOverBudget
-    ? `Dépassement de ${formatMoney(Math.abs(budget.remaining))}`
-    : `${formatMoney(budget.remaining)} restants`
-
   return (
     <Card className="min-w-0 border-[#13223a] bg-gradient-to-t from-[#071226] to-[#0b1d3a] transition hover:border-violet-500/40">
       <CardHeader className="min-w-0 pb-0">
@@ -213,41 +224,21 @@ function BudgetCard({
         </div>
       </CardHeader>
 
-      <CardContent className="min-w-0 space-y-4">
-        <div className="min-w-0">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-white">
-              {formatMoney(budget.spent)}
-            </span>{" "}
-            dépensés sur{" "}
-            <span className="font-medium text-white">
-              {formatMoney(budget.amount)}
-            </span>
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <div className="h-3 overflow-hidden rounded-full bg-white/10">
-            <div
-              className={`h-full rounded-full ${
-                isOverBudget
-                  ? "bg-red-500"
-                  : "bg-gradient-to-r from-violet-500 to-cyan-400"
-              }`}
-              style={{ width: `${progressWidth}%` }}
-            />
+      <CardContent className="min-w-0 space-y-3">
+        <dl className="space-y-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <dt className="text-muted-foreground">Enveloppe variable</dt>
+            <dd className="font-semibold text-white">{formatMoney(budget.amount)}</dd>
           </div>
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span
-              className={isOverBudget ? "text-red-300" : "text-muted-foreground"}
-            >
-              {statusLabel}
-            </span>
-            <span className="font-semibold text-white">
-              {Math.round(budget.percentage)} %
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <dt className="text-muted-foreground">Dépenses variables réelles</dt>
+            <dd className="font-medium text-white">{formatMoney(budget.spent)}</dd>
           </div>
-        </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3">
+            <dt className="text-muted-foreground">Reste dans l’enveloppe</dt>
+            <dd className={`font-semibold ${budget.remaining < 0 ? "text-red-300" : "text-emerald-300"}`}>{formatMoney(budget.remaining)}</dd>
+          </div>
+        </dl>
       </CardContent>
     </Card>
   )
@@ -258,46 +249,75 @@ export function BudgetsManager() {
   const [month, setMonth] = useState(initialPeriod.month)
   const [year, setYear] = useState(initialPeriod.year)
   const [budgets, setBudgets] = useState<BudgetItem[]>([])
+  const [pendingPayments, setPendingPayments] = useState<PendingRecurringPayment[]>([])
+  const [recurringPayments, setRecurringPayments] = useState<RecurringPaymentSummary[]>([])
+  const [actualSummary, setActualSummary] = useState<MonthlyActualSummary | null>(null)
+  const [cumulativeResult, setCumulativeResult] = useState<CumulativeMonthlyResult | null>(null)
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[] | null>(null)
+  const [paymentToConfirm, setPaymentToConfirm] = useState<PendingRecurringPayment | null>(null)
   const [summary, setSummary] = useState<BudgetSummary>(getEmptySummary)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [loadError, setLoadError] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [budgetToEdit, setBudgetToEdit] = useState<BudgetItem | null>(null)
   const [budgetToDelete, setBudgetToDelete] = useState<BudgetItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState("")
+  const [reserveToEdit, setReserveToEdit] = useState<{
+    month: number
+    year: number
+    amount: number
+  } | null>(null)
+  const [recurringVersion, setRecurringVersion] = useState(0)
+  const [suggestionsVersion, setSuggestionsVersion] = useState(0)
+  const loadSequence = useRef(0)
 
   const loadBudgets = useCallback(async () => {
+    const requestId = ++loadSequence.current
     try {
       setLoadError("")
-      const data = await requestBudgets(month, year)
+      const data = await requestBudgets(month, year, selectedAccountIds)
+      if (requestId !== loadSequence.current) return
 
       setBudgets(data.budgets)
+      setPendingPayments(data.pendingPayments ?? [])
+      setRecurringPayments(data.recurringPayments ?? [])
+      setActualSummary(data.actualSummary ?? null)
+      setCumulativeResult(data.cumulativeResult ?? null)
       setSummary(data.summary)
+      setHasLoaded(true)
     } catch (error) {
+      if (requestId !== loadSequence.current) return
       setLoadError(
         error instanceof Error
           ? error.message
           : "Impossible de charger les budgets."
       )
     } finally {
-      setIsLoading(false)
+      if (requestId === loadSequence.current) setIsLoading(false)
     }
-  }, [month, year])
+  }, [month, year, selectedAccountIds])
 
   useEffect(() => {
     let isMounted = true
+    const requestId = ++loadSequence.current
 
-    requestBudgets(month, year)
+    requestBudgets(month, year, selectedAccountIds)
       .then((data) => {
-        if (isMounted) {
+        if (isMounted && requestId === loadSequence.current) {
           setBudgets(data.budgets)
+          setPendingPayments(data.pendingPayments ?? [])
+          setRecurringPayments(data.recurringPayments ?? [])
+          setActualSummary(data.actualSummary ?? null)
+          setCumulativeResult(data.cumulativeResult ?? null)
           setSummary(data.summary)
+          setHasLoaded(true)
           setLoadError("")
         }
       })
       .catch((error: unknown) => {
-        if (isMounted) {
+        if (isMounted && requestId === loadSequence.current) {
           setLoadError(
             error instanceof Error
               ? error.message
@@ -306,7 +326,7 @@ export function BudgetsManager() {
         }
       })
       .finally(() => {
-        if (isMounted) {
+        if (isMounted && requestId === loadSequence.current) {
           setIsLoading(false)
         }
       })
@@ -314,13 +334,18 @@ export function BudgetsManager() {
     return () => {
       isMounted = false
     }
-  }, [month, year])
+  }, [month, year, selectedAccountIds])
 
-  const isOverAllocated = summary.toAllocate < 0
+  useEffect(() => subscribeFinanceChanges(() => void loadBudgets()), [loadBudgets])
+
+  const isOverAllocated = summary.freeMoney < 0
 
   function changeMonth(offset: number) {
     const nextPeriod = shiftPeriod(month, year, offset)
-
+    loadSequence.current += 1
+    setIsLoading(true)
+    setHasLoaded(false)
+    setLoadError("")
     setMonth(nextPeriod.month)
     setYear(nextPeriod.year)
   }
@@ -357,8 +382,8 @@ export function BudgetsManager() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {Array.from({ length: 4 }).map((_, index) => (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-28 rounded-xl" />
           ))}
         </div>
@@ -369,6 +394,14 @@ export function BudgetsManager() {
 
   return (
     <>
+      {paymentToConfirm && <RecurringPaymentDialog key={paymentToConfirm.transactionId} payment={paymentToConfirm} onClose={() => setPaymentToConfirm(null)} onChanged={() => void loadBudgets()} />}
+      {reserveToEdit && (
+        <EmergencyReserveDialog
+          {...reserveToEdit}
+          onClose={() => setReserveToEdit(null)}
+          onSaved={() => void loadBudgets()}
+        />
+      )}
       <BudgetDialog
         budget={budgetToEdit}
         open={dialogOpen}
@@ -426,7 +459,7 @@ export function BudgetsManager() {
           <div>
             <h1 className="text-3xl font-bold text-white">Budgets</h1>
             <p className="text-muted-foreground">
-              Gérez vos limites de dépenses mensuelles.
+              Planifiez vos charges, votre réserve et vos budgets variables.
             </p>
           </div>
 
@@ -466,7 +499,7 @@ export function BudgetsManager() {
           </div>
         </div>
 
-        {loadError ? (
+        {loadError && !hasLoaded ? (
           <Card className="border-red-500/30 bg-red-500/5">
             <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
               <p role="alert" className="text-red-300">
@@ -479,6 +512,7 @@ export function BudgetsManager() {
           </Card>
         ) : (
           <>
+            {loadError && <p role="alert" className="text-sm text-red-300">{loadError} Les dernières données chargées restent affichées.</p>}
             <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <SummaryCard
                 title="Revenus du mois"
@@ -487,28 +521,73 @@ export function BudgetsManager() {
                 icon={TrendingUp}
               />
               <SummaryCard
-                title="Budget alloué"
-                value={formatMoney(summary.budgetAllocated)}
+                title="Charges récurrentes prévues"
+                value={formatMoney(summary.recurringCommittedTotal)}
                 description={getMonthLabel(month, year)}
+                icon={Repeat}
+              />
+              <SummaryCard
+                title="Réserve d'urgence"
+                value={formatMoney(summary.emergencyReserve)}
+                description="Montant réservé dans votre plan mensuel"
+                icon={ShieldCheck}
+                action={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-7 px-0"
+                    onClick={() => setReserveToEdit({ month, year, amount: summary.emergencyReserve })}
+                  >
+                    <Pencil aria-hidden="true" className="size-3" />
+                    Modifier
+                  </Button>
+                }
+              />
+              <SummaryCard
+                title="Disponible pour les budgets"
+                value={formatMoney(summary.availableForBudgets)}
+                description="Après charges et réserve"
+                icon={WalletCards}
+              />
+            </div>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <SummaryCard
+                title="Budgets alloués"
+                value={formatMoney(summary.variableBudgetAllocated)}
+                description="Enveloppes variables"
                 icon={Target}
               />
               <SummaryCard
-                title="Dépensé"
-                value={formatMoney(summary.spent)}
-                description="Dépenses budgétées"
-                icon={WalletCards}
-              />
-              <SummaryCard
-                title="À répartir"
-                value={formatMoney(summary.toAllocate)}
-                description={
-                  isOverAllocated
-                    ? "Budgets supérieurs aux revenus"
-                    : "Non affecté aux budgets"
-                }
+                title="Reste à répartir"
+                value={formatMoney(summary.freeMoney)}
+                description="Après allocation des budgets variables"
                 icon={PiggyBank}
               />
             </div>
+
+            <RecurringSuggestions key={`recurring-suggestions-${suggestionsVersion}`} onConfirmed={() => {
+              setRecurringVersion((version) => version + 1)
+              void loadBudgets()
+            }} />
+            <RecurringTransactions key={`recurring-transactions-${recurringVersion}`} month={month} year={year} monthlyPayments={recurringPayments} onChanged={() => void loadBudgets()} onCreated={() => {
+              setSuggestionsVersion((version) => version + 1)
+              void loadBudgets()
+            }} />
+
+            {pendingPayments.length > 0 && (
+              <section aria-labelledby="payments-to-reconcile" className="space-y-3">
+                <h2 id="payments-to-reconcile" className="text-lg font-semibold">Paiements à rapprocher</h2>
+                <p className="text-sm text-muted-foreground">Ces paiements restent dans les dépenses variables tant que leur correspondance n’est pas confirmée.</p>
+                <div className="max-h-80 overflow-y-auto divide-y divide-white/10">
+                  {pendingPayments.map((payment) => (
+                    <div key={payment.transactionId} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0 flex-1"><p className="break-words font-medium">{payment.title}</p><p className="text-sm text-muted-foreground">{new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC" }).format(new Date(payment.date))} · {formatMoney(payment.amount)}</p></div>
+                      <Button variant="outline" size="sm" onClick={() => setPaymentToConfirm(payment)}>Rapprocher</Button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {isOverAllocated && (
               <Card className="border-red-500/30 bg-red-500/5">
@@ -518,15 +597,68 @@ export function BudgetsManager() {
                     className="mt-0.5 size-5 shrink-0 text-red-300"
                   />
                   <p role="alert" className="text-sm text-red-200">
-                    Vos budgets dépassent de{" "}
+                    Votre plan mensuel dépasse vos revenus de{" "}
                     <span className="font-semibold">
-                      {formatMoney(Math.abs(summary.toAllocate))}
+                      {formatMoney(Math.abs(summary.freeMoney))}
                     </span>{" "}
-                    vos revenus du mois.
+                    (charges, réserve et budgets variables).
                   </p>
                 </CardContent>
               </Card>
             )}
+
+            <section
+              aria-labelledby="budget-allocation-heading"
+              className="min-w-0 space-y-3 border-y border-white/10 py-4"
+            >
+              <h2
+                id="budget-allocation-heading"
+                className="text-base font-semibold text-white"
+              >
+                Répartition des budgets
+              </h2>
+              <dl className="max-w-lg space-y-2 text-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-muted-foreground">Disponible pour les budgets</dt>
+                  <dd className="shrink-0 tabular-nums text-white">
+                    {formatMoney(summary.availableForBudgets)}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-muted-foreground">Budgets déjà alloués</dt>
+                  <dd className="shrink-0 tabular-nums text-white">
+                    {summary.variableBudgetAllocated > 0 && "-"}
+                    {formatMoney(summary.variableBudgetAllocated)}
+                  </dd>
+                </div>
+                <div
+                  className="flex items-start justify-between gap-4 border-t border-white/10 pt-3"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <dt className="font-medium text-white">
+                    {isOverAllocated ? "Surallocation" : "Reste à répartir"}
+                  </dt>
+                  <dd className="min-w-0 text-right">
+                    <span className={`font-semibold tabular-nums ${
+                      isOverAllocated ? "text-red-300" : "text-emerald-300"
+                    }`}>
+                      {formatMoney(isOverAllocated ? Math.abs(summary.freeMoney) : summary.freeMoney)}
+                    </span>
+                    {isOverAllocated && (
+                      <span className="mt-1 block text-xs text-red-300">
+                        au-delà du montant disponible
+                      </span>
+                    )}
+                    {summary.freeMoney === 0 && (
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        Tout l&apos;argent disponible a été réparti.
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </section>
 
             <section aria-labelledby="budgets-by-category" className="space-y-4">
               <div>
@@ -534,10 +666,10 @@ export function BudgetsManager() {
                   id="budgets-by-category"
                   className="text-2xl font-semibold text-white"
                 >
-                  Budgets par catégorie
+                  Budgets variables par catégorie
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Suivez vos limites mensuelles et les dépenses associées.
+                  Enveloppes variables et dépenses variables réelles par catégorie.
                 </p>
               </div>
 
@@ -551,21 +683,11 @@ export function BudgetsManager() {
                       <p>
                         Vous disposez de{" "}
                         <span className="font-medium text-white">
-                          {formatMoney(summary.monthlyIncome)}
+                          {formatMoney(summary.availableForBudgets)}
                         </span>{" "}
-                        de revenus à répartir entre vos catégories.
+                        disponibles pour les budgets variables.
                       </p>
                     </div>
-                    <Button
-                      className="bg-gradient-to-r from-violet-600 to-cyan-500"
-                      onClick={() => {
-                        setBudgetToEdit(null)
-                        setDialogOpen(true)
-                      }}
-                    >
-                      <Plus aria-hidden="true" className="size-4" />
-                      Créer un budget
-                    </Button>
                   </CardContent>
                 </Card>
               ) : (
@@ -586,7 +708,59 @@ export function BudgetsManager() {
                   ))}
                 </div>
               )}
+              <Button
+                variant="outline"
+                className="w-full border-white/15 bg-white/5 text-white hover:bg-white/10 sm:w-auto"
+                onClick={() => {
+                  setBudgetToEdit(null)
+                  setDialogOpen(true)
+                }}
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                Ajouter un budget
+              </Button>
             </section>
+            {actualSummary && (
+              <MonthlyActualSummarySection
+                summary={actualSummary}
+                cumulativeResult={cumulativeResult}
+                accountSelection={cumulativeResult?.accountScope && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="max-w-full border-white/15 bg-transparent text-white">
+                        <WalletCards className="size-4" aria-hidden="true" />
+                        Comptes suivis
+                        <ChevronDown className="size-4" aria-hidden="true" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuLabel>Périmètre du solde disponible</DropdownMenuLabel>
+                      {cumulativeResult.accountScope.accounts.map(account => (
+                        <DropdownMenuCheckboxItem
+                          key={account.id}
+                          checked={cumulativeResult.accountScope!.selectedAccountIds.includes(account.id)}
+                          disabled={account.currency !== "EUR"}
+                          onSelect={event => event.preventDefault()}
+                          onCheckedChange={checked => {
+                            const current = cumulativeResult.accountScope!.selectedAccountIds
+                            const next = checked ? [...current, account.id] : current.filter(id => id !== account.id)
+                            loadSequence.current += 1
+                            setIsLoading(true)
+                            setHasLoaded(false)
+                            setSelectedAccountIds(next)
+                          }}
+                        >
+                          <span className="break-words">{account.name}{account.status !== "ACTIVE" ? " (archivé)" : ""}{account.currency !== "EUR" ? ` (${account.currency})` : ""}</span>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                categoryIcons={Object.fromEntries(budgets.map(budget => [budget.category.id, budget.category.icon]))}
+                periodLabel={getMonthLabel(month, year)}
+                completed={year < initialPeriod.year || (year === initialPeriod.year && month < initialPeriod.month)}
+              />
+            )}
           </>
         )}
       </div>

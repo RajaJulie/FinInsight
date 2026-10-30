@@ -1,3 +1,5 @@
+import { getActivityAmount, getActivityPeriodForDate, type RecurringActivityPeriod } from "./activity-periods"
+
 export type DetectableTransactionType = "INCOME" | "EXPENSE"
 export type RecurringSuggestionConfidence = "POSSIBLE" | "HIGH"
 
@@ -33,6 +35,9 @@ export type DetectableRecurringTransaction = {
   detectionType?: DetectableTransactionType | null
   sourceTransactionIds?: string[]
   sourceTransactions?: RecurringSuggestionOccurrence[]
+  startDate?: Date | string
+  endDate?: Date | string | null
+  activityPeriods?: RecurringActivityPeriod[]
 }
 
 export type RecurringSuggestionOccurrence = {
@@ -132,12 +137,12 @@ export function detectRecurringTransactionSuggestions({
   transactions: DetectableTransaction[]
   recurringTransactions: DetectableRecurringTransaction[]
 }) {
-  const activeRecurringTransactions = recurringTransactions.filter(
-    (transaction) => transaction.active && transaction.frequency === "MONTHLY"
+  const monthlyRecurringTransactions = recurringTransactions.filter(
+    (transaction) => transaction.frequency === "MONTHLY"
   )
   const suggestions = groupCandidateTransactions(transactions)
     .flatMap((group) =>
-      buildSuggestionsForGroup(group, activeRecurringTransactions)
+      buildSuggestionsForGroup(group, monthlyRecurringTransactions)
     )
 
   return suggestions.sort((first, second) => {
@@ -153,9 +158,7 @@ function groupCandidateTransactions(transactions: DetectableTransaction[]) {
   const groups = new Map<string, CandidateGroup>()
 
   for (const transaction of transactions) {
-    if (transaction.type !== "INCOME" && transaction.type !== "EXPENSE") {
-      continue
-    }
+    if (transaction.type !== "EXPENSE") continue
 
     const normalizedTitle = normalizeRecurringTitle(transaction.title)
     if (!normalizedTitle) continue
@@ -187,7 +190,8 @@ function buildSuggestionsForGroup(
     (transaction) =>
       !isTransactionCoveredByConfirmedDetection(
         transaction,
-        activeRecurringTransactions
+        activeRecurringTransactions,
+        sortedTransactions
       )
   )
   const candidateSequences = getCandidateSequences(availableTransactions).filter(
@@ -576,30 +580,9 @@ function isAlreadyConfirmedRecurringSuggestion(
       return true
     }
 
-    if (hasDetectionIdentity(recurringTransaction)) {
-      return false
-    }
-
-    if (recurringTransaction.type !== suggestion.type) return false
-    if (recurringTransaction.accountId !== suggestion.accountId) return false
-    if (
-      normalizeRecurringTitle(recurringTransaction.title) !==
-      normalizeRecurringTitle(suggestion.title)
-    ) {
-      return false
-    }
-    if (
-      Math.abs(
-        recurringTransaction.dayOfMonth - suggestion.estimatedDayOfMonth
-      ) > MONTHLY_DAY_TOLERANCE_DAYS
-    ) {
-      return false
-    }
-
-    return isAmountWithinConfirmedRecurringTolerance(
-      recurringTransaction.amount,
-      suggestion.estimatedAmount
-    )
+    // Unambiguous known payments have already been removed individually.
+    // A whole series must not be hidden merely because its average is close.
+    return false
   })
 }
 
@@ -664,60 +647,38 @@ function hasConfirmedSourceContinuity(
 
 function isTransactionCoveredByConfirmedDetection(
   transaction: DetectableTransaction,
-  recurringTransactions: DetectableRecurringTransaction[]
+  recurringTransactions: DetectableRecurringTransaction[],
+  transactions: DetectableTransaction[]
 ) {
-  return recurringTransactions.some((recurringTransaction) => {
-    if (!hasDetectionIdentity(recurringTransaction)) return false
-    if (recurringTransaction.detectionType !== transaction.type) return false
-    if (recurringTransaction.detectionAccountId !== transaction.accountId) {
-      return false
-    }
-    if (
-      recurringTransaction.detectionTitleNorm !==
-      normalizeRecurringTitle(transaction.title)
-    ) {
-      return false
-    }
+  if (recurringTransactions.some(recurring => getRecurringSourceTransactionIds(recurring).includes(transaction.id))) return true
 
-    const sourceTransactionIds = getRecurringSourceTransactionIds(
-      recurringTransaction
-    )
-
-    if (sourceTransactionIds.includes(transaction.id)) return true
-
-    return isFutureContinuationOfConfirmedDetection(
-      transaction,
-      recurringTransaction
-    )
-  })
-}
-
-function isFutureContinuationOfConfirmedDetection(
-  transaction: DetectableTransaction,
-  recurringTransaction: DetectableRecurringTransaction
-) {
-  const sources = recurringTransaction.sourceTransactions ?? []
-
-  if (sources.length < MIN_OCCURRENCES) return false
-
-  const sourceDates = sources.map((source) => toDate(source.date))
-  const latestSourceMonth = Math.max(...sourceDates.map(getMonthIndex))
-
-  if (getMonthIndex(toDate(transaction.date)) <= latestSourceMonth) {
-    return false
+  const matching = recurringTransactions.filter(recurring => isCompatibleConfirmedPayment(transaction, recurring))
+  if (matching.length === 1) {
+    const recurring = matching[0]
+    const month = getMonthIndex(toDate(transaction.date))
+    const knownPaymentThisMonth = recurring.sourceTransactions?.some(source => getMonthIndex(toDate(source.date)) === month)
+    const compatibleThisMonth = transactions.filter(other => getMonthIndex(toDate(other.date)) === month && isCompatibleConfirmedPayment(other, recurring))
+    if (!knownPaymentThisMonth && compatibleThisMonth.length === 1) return true
   }
 
-  const estimatedDay = estimateRecurringDayOfMonth(sourceDates)
-  const isDayCoherent =
-    Math.abs(toDate(transaction.date).getUTCDate() - estimatedDay) <=
-    MONTHLY_DAY_TOLERANCE_DAYS
+  return false
+}
 
-  if (!isDayCoherent) return false
-
-  return isAmountWithinRecurringTolerance([
-    ...sources.map((source) => source.amount),
-    transaction.amount,
-  ])
+function isCompatibleConfirmedPayment(transaction: DetectableTransaction, recurring: DetectableRecurringTransaction) {
+  if (transaction.type !== recurring.type || recurring.frequency !== "MONTHLY") return false
+  if (normalizeRecurringTitle(transaction.title) !== (recurring.detectionTitleNorm ?? normalizeRecurringTitle(recurring.title))) return false
+  const period = recurring.startDate ? getActivityPeriodForDate({
+    ...recurring, startDate: recurring.startDate, endDate: recurring.endDate ?? null,
+  }, transaction.date) : null
+  if (recurring.startDate && !period) return false
+  if (!recurring.startDate && !recurring.active) return false
+  if (transaction.accountId !== (period?.accountId ?? recurring.accountId)) return false
+  const day = period?.dayOfMonth ?? recurring.dayOfMonth
+  const date = toDate(transaction.date)
+  const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate()
+  if (Math.abs(date.getUTCDate() - Math.min(day, lastDay)) > MONTHLY_DAY_TOLERANCE_DAYS) return false
+  const amount = period ? getActivityAmount(recurring, period) : recurring.amount
+  return isAmountWithinConfirmedRecurringTolerance(amount, transaction.amount)
 }
 
 function getRecurringSourceTransactionIds(
@@ -733,9 +694,8 @@ function isAmountWithinConfirmedRecurringTolerance(
   estimatedAmount: number
 ) {
   const average = averageNumber([confirmedAmount, estimatedAmount])
-  const tolerance = Math.max(0.05, Math.min(1, Math.abs(average) * 0.01))
-
-  return Math.abs(confirmedAmount - estimatedAmount) <= tolerance
+  const toleranceCents = Math.max(5, Math.min(100, Math.round(Math.abs(average) * 3)))
+  return Math.abs(Math.round(confirmedAmount * 100) - Math.round(estimatedAmount * 100)) <= toleranceCents
 }
 
 function getMostFrequentCategory(transactions: DetectableTransaction[]) {

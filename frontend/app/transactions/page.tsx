@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
 import { auth } from "@/auth"
 
 import { AppSidebar } from "@/components/app-sidebar"
@@ -58,7 +59,9 @@ export default async function TransactionsPage() {
               </div>
             </div>
 
-            <TransactionsTable />
+            <Suspense fallback={<p role="status" className="text-sm text-white/70">Chargement des transactions...</p>}>
+              <TransactionsTable />
+            </Suspense>
 
             
           </div>

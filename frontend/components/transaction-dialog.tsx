@@ -1,5 +1,7 @@
 "use client"
 
+import { notifyFinanceChanged } from "@/lib/finance-events"
+
 import { type ReactNode, useEffect, useState } from "react"
 import { z } from "zod"
 import { SubmitHandler, useForm, useWatch } from "react-hook-form"
@@ -328,6 +330,7 @@ export function TransactionDialog({
       }
 
       const savedTransaction = isEditing ? data : data.transaction
+      notifyFinanceChanged()
 
       reset(defaultValues)
       setOpen(false)

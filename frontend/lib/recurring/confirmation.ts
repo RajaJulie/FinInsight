@@ -4,6 +4,8 @@ import {
   type DetectableRecurringTransaction,
 } from "./detection"
 import { prisma } from "../prisma"
+import { Prisma } from "../generated/prisma/client"
+import { serializeRecurringTransaction } from "./serialization"
 import { confirmRecurringTransactionSchema } from "../validations/recurring-transaction"
 
 const recurringTransactionRelations = {
@@ -164,11 +166,13 @@ export async function confirmRecurringTransactionForUser({
       const createdRecurringTransaction = await tx.recurringTransaction.create({
         data: {
           title: validation.data.title,
-          amount: validation.data.amount,
+          amount: new Prisma.Decimal(validation.data.amount),
           type: suggestion.type,
           frequency: validation.data.frequency,
           dayOfMonth: validation.data.dayOfMonth,
           active: validation.data.active,
+          startDate: validation.data.startDate,
+          endDate: validation.data.endDate,
           userId,
           categoryId: category.id,
           accountId: account.id,
@@ -198,7 +202,7 @@ export async function confirmRecurringTransactionForUser({
       status: 201,
       body: {
         message: "Suggestion confirmée avec succès.",
-        recurringTransaction,
+        recurringTransaction: serializeRecurringTransaction(recurringTransaction),
       },
     } as const
   } catch (error) {
@@ -232,9 +236,7 @@ export async function getCurrentUserSuggestions(userId: string) {
     prisma.transaction.findMany({
       where: {
         userId,
-        type: {
-          in: ["INCOME", "EXPENSE"],
-        },
+        type: "EXPENSE",
       },
       select: {
         id: true,
@@ -262,7 +264,6 @@ export async function getCurrentUserSuggestions(userId: string) {
     prisma.recurringTransaction.findMany({
       where: {
         userId,
-        active: true,
       },
       select: {
         title: true,
@@ -273,6 +274,9 @@ export async function getCurrentUserSuggestions(userId: string) {
         active: true,
         accountId: true,
         detectionTitleNorm: true,
+        startDate: true,
+        endDate: true,
+        activityPeriods: true,
         detectionAccountId: true,
         detectionType: true,
         sourceTransactions: {
@@ -298,12 +302,15 @@ export async function getCurrentUserSuggestions(userId: string) {
 
       return [{
         title: transaction.title,
-        amount: transaction.amount,
+        amount: Number(transaction.amount),
         type: transaction.type,
         frequency: transaction.frequency,
         dayOfMonth: transaction.dayOfMonth,
         active: transaction.active,
         accountId: transaction.accountId,
+        startDate: transaction.startDate,
+        endDate: transaction.endDate,
+        activityPeriods: transaction.activityPeriods,
         detectionTitleNorm: transaction.detectionTitleNorm,
         detectionAccountId: transaction.detectionAccountId,
         detectionType:

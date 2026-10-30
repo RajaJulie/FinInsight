@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@/lib/generated/prisma/client"
+import { isSameManualRecurringCharge } from "@/lib/recurring/manual-duplicate"
+import { serializeRecurringTransaction } from "@/lib/recurring/serialization"
 import { recurringTransactionSchema } from "@/lib/validations/recurring-transaction"
 
 async function getCurrentUser() {
@@ -16,6 +19,11 @@ async function getCurrentUser() {
 }
 
 const recurringTransactionRelations = {
+  activityPeriods: { orderBy: [{ startDate: "asc" }, { id: "asc" }] },
+  sourceTransactions: {
+    orderBy: { transaction: { date: "desc" } }, take: 1,
+    select: { transaction: { select: { date: true } } },
+  },
   category: {
     select: {
       id: true,
@@ -32,7 +40,7 @@ const recurringTransactionRelations = {
       status: true,
     },
   },
-} as const
+} satisfies Prisma.RecurringTransactionInclude
 
 export async function GET() {
   try {
@@ -45,10 +53,16 @@ export async function GET() {
     const recurringTransactions = await prisma.recurringTransaction.findMany({
       where: { userId: user.id },
       orderBy: [{ active: "desc" }, { dayOfMonth: "asc" }, { title: "asc" }],
-      include: recurringTransactionRelations,
+      include: {
+        ...recurringTransactionRelations,
+        sourceTransactions: {
+          ...recurringTransactionRelations.sourceTransactions,
+          where: { transaction: { userId: user.id, type: "EXPENSE" } },
+        },
+      },
     })
 
-    return NextResponse.json({ recurringTransactions })
+    return NextResponse.json({ recurringTransactions: recurringTransactions.map(serializeRecurringTransaction) })
   } catch (error) {
     console.error("GET_RECURRING_TRANSACTIONS_ERROR", error)
 
@@ -136,22 +150,38 @@ export async function POST(request: Request) {
       )
     }
 
-    const recurringTransaction = await prisma.recurringTransaction.create({
-      data: {
-        ...validation.data,
-        userId: user.id,
-      },
-      include: recurringTransactionRelations,
-    })
+    const recurringTransaction = await prisma.$transaction(async (tx) => {
+      const existing = await tx.recurringTransaction.findMany({
+        where: { userId: user.id, accountId: account.id, type: validation.data.type, frequency: "MONTHLY" },
+      })
+      if (existing.some((item) => isSameManualRecurringCharge(item, validation.data))) {
+        return null
+      }
+      return tx.recurringTransaction.create({
+        data: {
+          ...validation.data,
+          amount: new Prisma.Decimal(validation.data.amount),
+          userId: user.id,
+        },
+        include: recurringTransactionRelations,
+      })
+    }, { isolationLevel: "Serializable" })
+
+    if (!recurringTransaction) {
+      return NextResponse.json({ message: "Une charge identique existe déjà pour ce compte et cette période." }, { status: 409 })
+    }
 
     return NextResponse.json(
       {
         message: "Opération récurrente créée avec succès.",
-        recurringTransaction,
+        recurringTransaction: serializeRecurringTransaction(recurringTransaction),
       },
       { status: 201 }
     )
   } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2034") {
+      return NextResponse.json({ message: "Un ajout concurrent a eu lieu. Vérifiez la liste puis réessayez." }, { status: 409 })
+    }
     console.error("CREATE_RECURRING_TRANSACTION_ERROR", error)
 
     return NextResponse.json({ message: "Erreur serveur." }, { status: 500 })

@@ -43,11 +43,12 @@ model User {
   password  String
   createdAt DateTime @default(now())
 
-  transactions          Transaction[]
-  categories            Category[]
-  accounts              Account[]
-  budgets               Budget[]
-  recurringTransactions RecurringTransaction[]
+  transactions             Transaction[]
+  categories               Category[]
+  accounts                 Account[]
+  budgets                  Budget[]
+  recurringTransactions    RecurringTransaction[]
+  monthlyEmergencyReserves MonthlyEmergencyReserve[]
 }
 
 model Transaction {
@@ -119,6 +120,21 @@ model Budget {
   @@index([categoryId])
 }
 
+model MonthlyEmergencyReserve {
+  id     String  @id @default(cuid())
+  amount Decimal @db.Decimal(12, 2)
+  month  Int
+  year   Int
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, year, month])
+}
+
 model Account {
   id             String        @id @default(cuid())
   name           String
@@ -147,11 +163,13 @@ model Account {
 model RecurringTransaction {
   id         String             @id @default(cuid())
   title      String
-  amount     Float
+  amount     Decimal @db.Decimal(12, 2)
   type       TransactionType
   frequency  RecurringFrequency @default(MONTHLY)
   dayOfMonth Int
   active     Boolean            @default(true)
+  startDate  DateTime
+  endDate    DateTime?
 
   detectionTitleNorm String?
   detectionAccountId String?
@@ -167,6 +185,7 @@ model RecurringTransaction {
   account   Account @relation(fields: [accountId], references: [id], onDelete: Restrict)
 
   sourceTransactions RecurringTransactionSource[]
+  activityPeriods    RecurringActivityPeriod[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -175,7 +194,23 @@ model RecurringTransaction {
   @@index([userId, frequency])
   @@index([detectionType, detectionTitleNorm, detectionAccountId])
   @@index([categoryId])
+  @@index([categoryId, startDate, endDate])
   @@index([accountId])
+}
+
+model RecurringActivityPeriod {
+  id        String   @id @default(cuid())
+  startDate DateTime
+  endDate   DateTime?
+  amount    Decimal  @db.Decimal(12, 2)
+  cancelled Boolean  @default(false)
+  accountId String?
+  dayOfMonth Int?
+
+  recurringTransactionId String
+  recurringTransaction   RecurringTransaction @relation(fields: [recurringTransactionId], references: [id], onDelete: Cascade)
+
+  @@index([recurringTransactionId, startDate])
 }
 
 model RecurringTransactionSource {

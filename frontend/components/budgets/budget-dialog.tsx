@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { budgetSchema } from "@/lib/validations/budget"
+import { notifyFinanceChanged } from "@/lib/finance-events"
 
 type BudgetFormInput = z.input<typeof budgetSchema>
 type BudgetFormValues = z.output<typeof budgetSchema>
@@ -55,7 +56,6 @@ export type BudgetItem = {
   categoryId: string
   spent: number
   remaining: number
-  percentage: number
   category: {
     id: string
     name: string
@@ -204,6 +204,7 @@ export function BudgetDialog({
       )
       onOpenChange(false)
       onSaved()
+      notifyFinanceChanged(false)
     } catch (error) {
       setApiError(
         error instanceof Error
@@ -235,7 +236,8 @@ export function BudgetDialog({
             {isEditing ? "Modifier le budget" : "Nouveau budget"}
           </DialogTitle>
           <DialogDescription>
-            Définissez une limite mensuelle pour une catégorie de dépense.
+            Définissez une enveloppe variable, en plus des charges récurrentes
+            déjà réservées.
           </DialogDescription>
         </DialogHeader>
 
@@ -284,7 +286,7 @@ export function BudgetDialog({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="budget-amount">Limite mensuelle</FieldLabel>
+              <FieldLabel htmlFor="budget-amount">Budget variable mensuel</FieldLabel>
               <Input
                 id="budget-amount"
                 type="number"

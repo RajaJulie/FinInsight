@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { RecurringActivityValidationError } from "@/lib/recurring/activity-transition"
+import { updateRecurringTransactionForUser } from "@/lib/recurring/update"
 import { updateRecurringTransactionSchema } from "@/lib/validations/recurring-transaction"
 
 type RouteContext = {
@@ -19,25 +21,6 @@ async function getCurrentUser() {
   })
 }
 
-const recurringTransactionRelations = {
-  category: {
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      icon: true,
-      color: true,
-    },
-  },
-  account: {
-    select: {
-      id: true,
-      name: true,
-      status: true,
-    },
-  },
-} as const
-
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const user = await getCurrentUser()
@@ -47,27 +30,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const { id } = await context.params
-    const currentRecurringTransaction =
-      await prisma.recurringTransaction.findFirst({
-        where: {
-          id,
-          userId: user.id,
-        },
-        select: {
-          id: true,
-          type: true,
-          categoryId: true,
-          accountId: true,
-        },
-      })
-
-    if (!currentRecurringTransaction) {
-      return NextResponse.json(
-        { message: "Opération récurrente introuvable." },
-        { status: 404 }
-      )
-    }
-
     let body: unknown
 
     try {
@@ -91,70 +53,22 @@ export async function PATCH(request: Request, context: RouteContext) {
       )
     }
 
-    const nextType = validation.data.type ?? currentRecurringTransaction.type
-    const nextCategoryId =
-      validation.data.categoryId ?? currentRecurringTransaction.categoryId
-    const nextAccountId =
-      validation.data.accountId ?? currentRecurringTransaction.accountId
-    const shouldCheckCategory =
-      validation.data.categoryId !== undefined ||
-      validation.data.type !== undefined
-    const shouldCheckAccount = validation.data.accountId !== undefined
-
-    const [category, account] = await Promise.all([
-      shouldCheckCategory
-        ? prisma.category.findFirst({
-            where: {
-              id: nextCategoryId,
-              userId: user.id,
-              type: nextType,
-            },
-            select: { id: true },
-          })
-        : Promise.resolve({ id: nextCategoryId }),
-      shouldCheckAccount
-        ? prisma.account.findFirst({
-            where: {
-              id: nextAccountId,
-              userId: user.id,
-              status: "ACTIVE",
-            },
-            select: { id: true },
-          })
-        : Promise.resolve({ id: nextAccountId }),
-    ])
-
-    if (!category) {
-      return NextResponse.json(
-        {
-          message:
-            "La catégorie doit appartenir à l’utilisateur et être compatible avec le type choisi.",
-        },
-        { status: 400 }
-      )
+    const recurringTransaction = await updateRecurringTransactionForUser(user.id, id, validation.data)
+    if (!recurringTransaction) {
+      return NextResponse.json({ message: "Opération récurrente introuvable." }, { status: 404 })
     }
-
-    if (!account) {
-      return NextResponse.json(
-        {
-          message:
-            "Le compte doit être un compte actif appartenant à l’utilisateur.",
-        },
-        { status: 400 }
-      )
-    }
-
-    const recurringTransaction = await prisma.recurringTransaction.update({
-      where: { id: currentRecurringTransaction.id },
-      data: validation.data,
-      include: recurringTransactionRelations,
-    })
 
     return NextResponse.json({
       message: "Opération récurrente modifiée avec succès.",
       recurringTransaction,
     })
   } catch (error) {
+    if (error instanceof RecurringActivityValidationError) {
+      return NextResponse.json({ message: error.message }, { status: 400 })
+    }
+    if (typeof error === "object" && error !== null && "code" in error && ["P2002", "P2034"].includes(String(error.code))) {
+      return NextResponse.json({ message: "Cette charge a été modifiée simultanément. Actualisez puis réessayez." }, { status: 409 })
+    }
     console.error("UPDATE_RECURRING_TRANSACTION_ERROR", error)
 
     return NextResponse.json({ message: "Erreur serveur." }, { status: 500 })

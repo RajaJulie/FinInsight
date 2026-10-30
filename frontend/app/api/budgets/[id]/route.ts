@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"
-import {
-  calculateBudgetProgress,
-  getSpentForBudget,
-} from "@/lib/budgets/progress"
+import { getSpentForBudget } from "@/lib/budgets/progress"
+import { getEnvelopeRemaining } from "@/lib/budgets/money"
 import { prisma } from "@/lib/prisma"
 import { isPrismaErrorCode } from "@/lib/prisma-errors"
 import { updateBudgetSchema } from "@/lib/validations/budget"
@@ -142,7 +140,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       budget: {
         ...budget,
         category,
-        ...calculateBudgetProgress(budget.amount, spent),
+        spent,
+        remaining: getEnvelopeRemaining(budget.amount, spent),
       },
     })
   } catch (error) {

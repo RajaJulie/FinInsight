@@ -1,7 +1,8 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { detectRecurringTransactionSuggestions } from "./detection.ts"
+import { loadTs } from "../testing/load-ts.mjs"
+const { detectRecurringTransactionSuggestions } = loadTs("lib/recurring/detection.ts")
 
 const category = {
   id: "cat-phone",
@@ -12,18 +13,32 @@ const account = {
   id: "acc-main",
   name: "Compte principal",
 }
+const incomeCategory = {
+  id: "cat-income",
+  name: "Aides",
+  type: "INCOME",
+}
 
-function transaction(id, title, amount, date) {
+function transaction(id, title, amount, date, overrides = {}) {
+  const type = overrides.type ?? "EXPENSE"
+  const transactionCategory =
+    overrides.category === undefined
+      ? type === "INCOME"
+        ? incomeCategory
+        : category
+      : overrides.category
+
   return {
     id,
     title,
     amount,
-    type: "EXPENSE",
+    type,
     date: `${date}T00:00:00.000Z`,
-    categoryId: category.id,
-    category,
-    accountId: account.id,
-    account,
+    categoryId: transactionCategory?.id ?? null,
+    category: transactionCategory,
+    accountId: overrides.accountId ?? account.id,
+    account: overrides.account ?? account,
+    ...overrides,
   }
 }
 
@@ -68,6 +83,99 @@ function findSuggestionByOccurrences(suggestions, expectedOccurrenceIds) {
 }
 
 describe("detectRecurringTransactionSuggestions", () => {
+  it("detects a monthly expense suggestion", () => {
+    const suggestions = detectRecurringTransactionSuggestions({
+      transactions: [
+        transaction("netflix-jun", "Netflix", 13.49, "2026-06-04"),
+        transaction("netflix-jul", "Netflix", 13.49, "2026-07-04"),
+        transaction("netflix-aug", "Netflix", 13.49, "2026-08-04"),
+      ],
+      recurringTransactions: [],
+    })
+
+    assert.equal(suggestions.length, 1)
+    assert.equal(suggestions[0].title, "Netflix")
+    assert.equal(suggestions[0].type, "EXPENSE")
+    assert.equal(suggestions[0].estimatedAmount, 13.49)
+    assert.equal(suggestions[0].occurrenceCount, 3)
+    assert.equal(suggestions[0].confidence, "HIGH")
+    assert.deepEqual(occurrenceIds(suggestions[0]), [
+      "netflix-aug",
+      "netflix-jul",
+      "netflix-jun",
+    ])
+  })
+
+  it("does not suggest recurring income", () => {
+    const suggestions = detectRecurringTransactionSuggestions({
+      transactions: [
+        transaction("aide-jun", "Aide", 429.22, "2026-06-02", {
+          type: "INCOME",
+        }),
+        transaction("aide-jul", "Aide", 429.22, "2026-07-02", {
+          type: "INCOME",
+        }),
+        transaction("aide-aug", "Aide", 429.22, "2026-08-02", {
+          type: "INCOME",
+        }),
+      ],
+      recurringTransactions: [],
+    })
+
+    assert.equal(suggestions.length, 0)
+  })
+
+  it("keeps only expenses when income and expenses are mixed", () => {
+    const suggestions = detectRecurringTransactionSuggestions({
+      transactions: [
+        transaction("aide-jun", "Aide", 429.22, "2026-06-02", {
+          type: "INCOME",
+        }),
+        transaction("aide-jul", "Aide", 429.22, "2026-07-02", {
+          type: "INCOME",
+        }),
+        transaction("spotify-jun", "Spotify", 10.99, "2026-06-12"),
+        transaction("spotify-jul", "Spotify", 10.99, "2026-07-12"),
+        transaction("spotify-aug", "Spotify", 10.99, "2026-08-12"),
+      ],
+      recurringTransactions: [],
+    })
+
+    assert.equal(suggestions.length, 1)
+    assert.equal(suggestions[0].title, "Spotify")
+    assert.equal(suggestions[0].type, "EXPENSE")
+    assert.deepEqual(occurrenceIds(suggestions[0]), [
+      "spotify-aug",
+      "spotify-jul",
+      "spotify-jun",
+    ])
+  })
+
+  it("does not suggest recurring transfers", () => {
+    const suggestions = detectRecurringTransactionSuggestions({
+      transactions: [
+        transaction("transfer-jun", "Virement Revolut", 100, "2026-06-10", {
+          type: "TRANSFER",
+          categoryId: null,
+          category: null,
+        }),
+        transaction("transfer-jul", "Virement Revolut", 100, "2026-07-10", {
+          type: "TRANSFER",
+          categoryId: null,
+          category: null,
+        }),
+        transaction("transfer-aug", "Virement Revolut", 100, "2026-08-10", {
+          type: "TRANSFER",
+          categoryId: null,
+          category: null,
+        }),
+      ],
+      recurringTransactions: [],
+    })
+
+    assert.equal(suggestions.length, 0)
+  })
+
   it("keeps Apple A and Apple B distinct after confirmation and rename", () => {
     const appleAIds = ["apple-a-jun", "apple-a-jul", "apple-a-aug", "apple-a-sep"]
     const appleBIds = ["apple-b-jun", "apple-b-jul", "apple-b-aug", "apple-b-sep"]
@@ -223,5 +331,60 @@ describe("detectRecurringTransactionSuggestions", () => {
       "adobe-jun",
       "adobe-sep",
     ])
+  })
+
+  it("does not suggest an inactive confirmed recurrence from historical sources", () => {
+    const adobeTransactions = [
+      transaction("adobe-jun", "Adobe", 40.32, "2026-06-25"),
+      transaction("adobe-jul", "Adobe", 40.32, "2026-07-24"),
+      transaction("adobe-sep", "Adobe", 40.32, "2026-09-07"),
+    ]
+    const [adobeSuggestion] = detectRecurringTransactionSuggestions({
+      transactions: adobeTransactions,
+      recurringTransactions: [],
+    })
+    const inactiveAdobe = {
+      ...recurringFromSuggestion(adobeSuggestion, "Adobe"),
+      active: false,
+    }
+    const suggestionsAfterDeactivation = detectRecurringTransactionSuggestions({
+      transactions: adobeTransactions,
+      recurringTransactions: [inactiveAdobe],
+    })
+
+    assert.equal(suggestionsAfterDeactivation.length, 0)
+  })
+
+  it("keeps Apple B suggested when only inactive Apple A is confirmed", () => {
+    const appleAIds = ["apple-a-jun", "apple-a-jul", "apple-a-aug", "apple-a-sep"]
+    const appleBIds = ["apple-b-jun", "apple-b-jul", "apple-b-aug", "apple-b-sep"]
+    const appleTransactions = [
+      transaction("apple-a-jun", "Apple", 2.99, "2026-06-15"),
+      transaction("apple-b-jun", "Apple", 2.99, "2026-06-21"),
+      transaction("apple-a-jul", "Apple", 2.99, "2026-07-15"),
+      transaction("apple-b-jul", "Apple", 2.99, "2026-07-20"),
+      transaction("apple-a-aug", "Apple", 2.99, "2026-08-16"),
+      transaction("apple-b-aug", "Apple", 2.99, "2026-08-20"),
+      transaction("apple-a-sep", "Apple", 2.99, "2026-09-24"),
+      transaction("apple-b-sep", "Apple", 2.99, "2026-09-25"),
+    ]
+    const initialSuggestions = detectRecurringTransactionSuggestions({
+      transactions: appleTransactions,
+      recurringTransactions: [],
+    })
+    const appleA = findSuggestionByOccurrences(initialSuggestions, appleAIds)
+    const inactiveAppleA = {
+      ...recurringFromSuggestion(appleA, "iCloud Apple"),
+      active: false,
+    }
+    const suggestionsAfterDeactivation = detectRecurringTransactionSuggestions({
+      transactions: appleTransactions,
+      recurringTransactions: [inactiveAppleA],
+    })
+
+    assert.equal(suggestionsAfterDeactivation.length, 1)
+    assert.deepEqual(occurrenceIds(suggestionsAfterDeactivation[0]), [
+      ...appleBIds,
+    ].sort())
   })
 })

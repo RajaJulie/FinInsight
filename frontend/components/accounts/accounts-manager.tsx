@@ -1,11 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import {
   Archive,
   CalendarClock,
   CreditCard,
   Link2,
+  List,
   Pencil,
   PiggyBank,
   Plus,
@@ -183,6 +185,16 @@ function AccountCard({
             </p>
           </div>
         </div>
+
+        <Button asChild variant="outline" size="sm" className="w-full">
+          <Link
+            href={{ pathname: "/transactions", query: { accountId: account.id } }}
+            aria-label={`Voir les transactions de ${account.name}`}
+          >
+            <List aria-hidden="true" className="size-4" />
+            Voir les transactions
+          </Link>
+        </Button>
 
         <div className="flex flex-wrap justify-end gap-2">
           <Button

@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
 
 import { auth } from "@/auth"
-import {
-  calculateBudgetProgress,
-  getBudgetDateRange,
-  getSpentForBudget,
-} from "@/lib/budgets/progress"
+import { getSpentForBudget } from "@/lib/budgets/progress"
+import { getMonthlyBudgetActivity } from "@/lib/budgets/monthly-activity"
+import { getCumulativeMonthlyResult } from "@/lib/budgets/cumulative-result"
+import { InvalidAccountScopeError } from "@/lib/accounts/scope-summary"
+import { getEnvelopeRemaining, sumMoney } from "@/lib/budgets/money"
+import { calculateBudgetSummary } from "@/lib/budgets/summary"
 import { synchronizeLegacyTransactionCategories } from "@/lib/categories/ensure-defaults"
 import { prisma } from "@/lib/prisma"
 import { isPrismaErrorCode } from "@/lib/prisma-errors"
@@ -49,10 +51,13 @@ export async function GET(request: Request) {
       )
     }
 
-    await synchronizeLegacyTransactionCategories(user.id)
-
     const { month, year } = validation.data
-    const { start, end } = getBudgetDateRange(month, year)
+    const accountSelection = z.array(z.string().min(1).max(128)).max(100).safeParse(
+      searchParams.has("accountIds") ? (searchParams.get("accountIds") ? searchParams.get("accountIds")!.split(",") : []) : undefined
+    )
+    if (searchParams.has("accountIds") && !accountSelection.success) {
+      return NextResponse.json({ message: "Périmètre de comptes invalide." }, { status: 400 })
+    }
     const budgets = await prisma.budget.findMany({
       where: {
         userId: user.id,
@@ -76,74 +81,42 @@ export async function GET(request: Request) {
       },
     })
     const categoryIds = budgets.map((budget) => budget.categoryId)
-    const spentGroups =
-      categoryIds.length === 0
-        ? []
-        : await prisma.transaction.groupBy({
-            by: ["categoryId"],
-            where: {
-              userId: user.id,
-              categoryId: {
-                in: categoryIds,
-              },
-              type: "EXPENSE",
-              date: {
-                gte: start,
-                lt: end,
-              },
-            },
-            _sum: {
-              amount: true,
-            },
-          })
-    const spentByCategory = new Map(
-      spentGroups.map((group) => [
-        group.categoryId,
-        group._sum.amount ?? 0,
-      ])
-    )
-    const monthlyIncomeAggregate = await prisma.transaction.aggregate({
-      where: {
-        userId: user.id,
-        type: "INCOME",
-        date: {
-          gte: start,
-          lt: end,
-        },
-      },
-      _sum: {
-        amount: true,
-      },
+    const { spentByCategory, monthlyIncome, recurringCommittedTotal, pendingPayments, recurringPayments, actualSummary } =
+      await getMonthlyBudgetActivity(user.id, month, year)
+    const cumulativeResult = await getCumulativeMonthlyResult(user.id, month, year, actualSummary.remaining, accountSelection.success ? accountSelection.data : undefined)
+    const spent = sumMoney(categoryIds.map((id) => spentByCategory.get(id) ?? 0))
+    const reserve = await prisma.monthlyEmergencyReserve.findUnique({
+      where: { userId_year_month: { userId: user.id, year, month } },
+      select: { amount: true },
     })
-    const monthlyIncome = monthlyIncomeAggregate._sum.amount ?? 0
-    const budgetAllocated = budgets.reduce(
-      (total, budget) => total + budget.amount,
-      0
-    )
-    const spent = Array.from(spentByCategory.values()).reduce(
-      (total, amount) => total + amount,
-      0
-    )
 
     return NextResponse.json({
       month,
       year,
-      summary: {
+      pendingPayments,
+      recurringPayments,
+      actualSummary,
+      cumulativeResult,
+      summary: calculateBudgetSummary({
         monthlyIncome,
-        budgetAllocated,
+        recurringCommittedTotal,
+        emergencyReserve: reserve ? Number(reserve.amount) : 0,
+        budgetAmounts: budgets.map((budget) => budget.amount),
         spent,
-        toAllocate: monthlyIncome - budgetAllocated,
-      },
+      }),
       budgets: budgets.map((budget) => {
         const spent = spentByCategory.get(budget.categoryId) ?? 0
-
         return {
           ...budget,
-          ...calculateBudgetProgress(budget.amount, spent),
+          spent,
+          remaining: getEnvelopeRemaining(budget.amount, spent),
         }
       }),
     })
   } catch (error) {
+    if (error instanceof InvalidAccountScopeError) {
+      return NextResponse.json({ message: error.message }, { status: 400 })
+    }
     console.error("GET_BUDGETS_ERROR", error)
 
     return NextResponse.json({ message: "Erreur serveur." }, { status: 500 })
@@ -247,7 +220,8 @@ export async function POST(request: Request) {
         budget: {
           ...budget,
           category,
-          ...calculateBudgetProgress(budget.amount, spent),
+          spent,
+          remaining: getEnvelopeRemaining(budget.amount, spent),
         },
       },
       { status: 201 }

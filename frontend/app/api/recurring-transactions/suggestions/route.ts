@@ -30,9 +30,7 @@ export async function GET() {
       prisma.transaction.findMany({
         where: {
           userId: user.id,
-          type: {
-            in: ["INCOME", "EXPENSE"],
-          },
+          type: "EXPENSE",
         },
         select: {
           id: true,
@@ -60,7 +58,6 @@ export async function GET() {
       prisma.recurringTransaction.findMany({
         where: {
           userId: user.id,
-          active: true,
         },
         select: {
           title: true,
@@ -71,6 +68,9 @@ export async function GET() {
           active: true,
           accountId: true,
           detectionTitleNorm: true,
+          startDate: true,
+          endDate: true,
+          activityPeriods: true,
           detectionAccountId: true,
           detectionType: true,
           sourceTransactions: {
@@ -96,12 +96,15 @@ export async function GET() {
 
         return [{
           title: transaction.title,
-          amount: transaction.amount,
+          amount: Number(transaction.amount),
           type: transaction.type,
           frequency: transaction.frequency,
           dayOfMonth: transaction.dayOfMonth,
           active: transaction.active,
           accountId: transaction.accountId,
+          startDate: transaction.startDate,
+          endDate: transaction.endDate,
+          activityPeriods: transaction.activityPeriods,
           detectionTitleNorm: transaction.detectionTitleNorm,
           detectionAccountId: transaction.detectionAccountId,
           detectionType:
