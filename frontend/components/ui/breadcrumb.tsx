@@ -1,3 +1,7 @@
+/**
+ * Fournit les elements d'un fil d'Ariane : liens, page courante et separateurs.
+ * Centralise leur structure et leurs styles de navigation.
+ */
 import * as React from "react"
 import { Slot } from "radix-ui"
 

@@ -1,3 +1,7 @@
+/**
+ * Compare l'identite et le calendrier d'une charge saisie manuellement a une autre
+ * pour detecter un doublon sans se limiter a un titre similaire.
+ */
 import { normalizeRecurringTitle } from "./detection"
 
 type RecurringIdentity = {

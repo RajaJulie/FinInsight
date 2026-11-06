@@ -1,3 +1,7 @@
+/**
+ * Rapproche prudemment les depenses reelles des charges applicables selon
+ * leur compte, titre, montant et calendrier ; conserve les cas ambigus pour confirmation.
+ */
 import { toCents } from "../budgets/money"
 import { normalizeRecurringTitle } from "./detection"
 import { getActivityAmount, getActivityPeriodForDate, type RecurringActivityPeriod } from "./activity-periods"

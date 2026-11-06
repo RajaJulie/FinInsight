@@ -1,3 +1,7 @@
+/**
+ * Habille les panneaux coulissants Vaul pour les interfaces adaptees au mobile.
+ * Expose leurs declencheurs, contenu, fermeture, titres et descriptions.
+ */
 "use client"
 
 import * as React from "react"

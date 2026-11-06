@@ -1,3 +1,7 @@
+/**
+ * Assemble le dashboard de l'utilisateur authentifie : indicateurs, categories,
+ * transactions recentes, comptes et analyse mensuelle.
+ */
 import { AppSidebar } from "@/components/app-sidebar"
 import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"

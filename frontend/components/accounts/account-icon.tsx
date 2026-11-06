@@ -1,3 +1,7 @@
+/**
+ * Associe les identifiants d'icones des comptes aux composants Lucide.
+ * Fournit une icone de remplacement lorsque l'identifiant n'est pas reconnu.
+ */
 import {
   Banknote,
   ChartNoAxesCombined,

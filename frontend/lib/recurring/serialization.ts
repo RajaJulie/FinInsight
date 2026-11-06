@@ -1,3 +1,7 @@
+/**
+ * Prepare une charge Prisma pour le JSON en convertissant ses montants
+ * et en exposant les informations disponibles sur ses paiements sources.
+ */
 export function serializeRecurringTransaction<T extends {
   amount: unknown
   activityPeriods?: { amount: unknown }[]

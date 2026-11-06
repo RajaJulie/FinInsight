@@ -1,3 +1,7 @@
+/**
+ * Modifie ou supprime une charge recurrente appartenant a l'utilisateur.
+ * Delegue les changements de dates, de prix et d'activite au service qui preserve l'historique.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

@@ -1,3 +1,7 @@
+/**
+ * Affiche un menu de documents fourni par le parent et ses actions de presentation.
+ * Les entrees d'action du gabarit ne constituent pas une API de gestion de documents.
+ */
 "use client"
 
 import {

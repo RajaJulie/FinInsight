@@ -1,3 +1,7 @@
+/**
+ * Charge les indicateurs du dashboard et les donnees de son graphique financier.
+ * Gere la selection de periode du graphique et presente les montants renvoyes par les API.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

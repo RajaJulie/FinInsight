@@ -1,3 +1,7 @@
+/**
+ * Teste le pre-remplissage et la modification des charges : dates effectives, prix,
+ * comptes et jours de paiement, avec preservation des associations et de l'historique.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { Decimal } from "@prisma/client/runtime/client"

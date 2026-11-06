@@ -1,3 +1,7 @@
+/**
+ * Teste le lien des cartes de comptes vers leur historique de transactions.
+ * Verifie l'utilisation de l'identifiant reel pour plusieurs types et statuts de compte.
+ */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { createRequire } from "node:module"

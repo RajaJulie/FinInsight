@@ -1,3 +1,7 @@
+/**
+ * Teste les suggestions mensuelles et leur continuite apres confirmation, avec
+ * les series Apple, Free Mobile et Adobe, tout en excluant revenus et transferts.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 

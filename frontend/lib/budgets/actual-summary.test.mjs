@@ -1,3 +1,7 @@
+/**
+ * Teste le bilan reel et sa restitution par l'API : historique, categories sans
+ * budget, charges impayees, rapprochements, doublons et isolation entre utilisateurs.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { loadTs } from "../testing/load-ts.mjs"

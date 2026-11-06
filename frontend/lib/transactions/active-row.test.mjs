@@ -1,3 +1,7 @@
+/**
+ * Teste la selection de la ligne visible selon le defilement, le focus clavier
+ * et les limites du panneau sticky, y compris lorsque la liste est vide.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { loadTs } from "../testing/load-ts.mjs"

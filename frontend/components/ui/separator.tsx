@@ -1,3 +1,7 @@
+/**
+ * Fournit les separateurs Radix horizontaux ou verticaux.
+ * Centralise leur apparence et leur comportement decoratif.
+ */
 "use client"
 
 import * as React from "react"

@@ -1,3 +1,7 @@
+/**
+ * Teste les valeurs initiales, validations et payloads de confirmation, notamment
+ * l'independance des series Apple et Free Mobile et la restitution des erreurs.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 

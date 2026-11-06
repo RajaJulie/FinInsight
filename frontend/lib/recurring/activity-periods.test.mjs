@@ -1,3 +1,7 @@
+/**
+ * Teste les activations, desactivations et reprises avec conservation des periodes
+ * historiques, puis verifie leur traitement par les routes et les calculs budgetaires.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { Decimal } from "@prisma/client/runtime/client"

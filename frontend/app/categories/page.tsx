@@ -1,3 +1,7 @@
+/**
+ * Page serveur des categories : verifie la session et affiche leur gestionnaire
+ * avec la navigation et l'en-tete communs a l'application.
+ */
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"

@@ -1,3 +1,7 @@
+/**
+ * Planifie les changements de periodes lors de l'activation, de l'arret ou de la reprise
+ * d'une charge. Valide les dates et protege les periodes cloturees sans acceder a Prisma.
+ */
 type Period = {
   id?: string
   startDate: Date

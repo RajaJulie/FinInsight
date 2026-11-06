@@ -1,3 +1,7 @@
+/**
+ * Partage le traitement des dates civiles des charges : lecture, formatage,
+ * bornes mensuelles et verification de l'application d'une periode.
+ */
 const dateInputPattern = /^(\d{4})-(\d{2})-(\d{2})$/
 
 export function parseDateInputToUtcDate(value: string) {

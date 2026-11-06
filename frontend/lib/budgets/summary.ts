@@ -1,3 +1,7 @@
+/**
+ * Calcule en centimes le disponible pour les budgets et le reste a repartir
+ * depuis les revenus, charges prevues, reserve et enveloppes allouees.
+ */
 export type BudgetSummary = {
   monthlyIncome: number
   recurringCommittedTotal: number

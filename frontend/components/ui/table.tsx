@@ -1,3 +1,7 @@
+/**
+ * Fournit les elements HTML de tableau avec leurs styles communs et leur conteneur.
+ * Le tri, les donnees et la pagination restent geres par les composants metier.
+ */
 "use client"
 
 import * as React from "react"

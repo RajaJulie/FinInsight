@@ -1,3 +1,7 @@
+/**
+ * Initialise les categories manquantes et rattache les anciennes categories texte
+ * aux relations Prisma correspondantes, dans le perimetre de l'utilisateur.
+ */
 import { prisma } from "@/lib/prisma"
 import { DEFAULT_CATEGORY_TEMPLATES } from "@/lib/categories/constants"
 

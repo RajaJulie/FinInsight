@@ -1,3 +1,7 @@
+/**
+ * Permet de modifier la reserve d'urgence planifiee du mois selectionne.
+ * Valide le montant, appelle l'API et declenche l'actualisation des vues financieres.
+ */
 "use client"
 
 import { notifyFinanceChanged } from "@/lib/finance-events"

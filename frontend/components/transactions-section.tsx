@@ -1,3 +1,7 @@
+/**
+ * Affiche les transactions recentes fournies par le resume du dashboard.
+ * Presente leurs informations et montants avec les etats d'attente, d'erreur et de liste vide.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

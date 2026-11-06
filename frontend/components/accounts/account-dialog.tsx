@@ -1,3 +1,7 @@
+/**
+ * Formulaire partage de creation et modification d'un compte bancaire.
+ * Valide la saisie et appelle l'API Comptes avant de notifier le gestionnaire parent.
+ */
 "use client"
 
 import { useState } from "react"

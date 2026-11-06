@@ -1,3 +1,7 @@
+/**
+ * Fournit les badges et leurs variantes visuelles reutilisables.
+ * Compose les styles et permet de deleguer le rendu a un element enfant.
+ */
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"

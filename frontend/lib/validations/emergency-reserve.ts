@@ -1,3 +1,7 @@
+/**
+ * Valide le mois, l'annee et le montant de la reserve d'urgence planifiee.
+ * Rejette les champs supplementaires plutot que d'accepter un proprietaire fourni par le client.
+ */
 import { z } from "zod"
 
 export const emergencyReserveSchema = z

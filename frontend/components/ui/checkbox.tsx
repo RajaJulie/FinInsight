@@ -1,3 +1,7 @@
+/**
+ * Habille la case a cocher Radix avec son indicateur et ses etats visuels.
+ * Conserve la gestion d'interaction de la primitive sous-jacente.
+ */
 "use client"
 
 import * as React from "react"

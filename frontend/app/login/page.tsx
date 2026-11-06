@@ -1,3 +1,7 @@
+/**
+ * Affiche la page de connexion en reutilisant le formulaire LoginForm.
+ * La verification des identifiants est geree par Auth.js.
+ */
 "use client"
 
 import { LoginForm } from "@/components/login-form"

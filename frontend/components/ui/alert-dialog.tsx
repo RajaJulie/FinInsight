@@ -1,3 +1,7 @@
+/**
+ * Primitives shadcn/ui de confirmation modale construites sur Radix.
+ * Partagent la presentation des actions, annulations, titres et descriptions.
+ */
 "use client"
 
 import * as React from "react"

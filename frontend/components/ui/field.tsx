@@ -1,3 +1,7 @@
+/**
+ * Compose les groupes de champs, labels, descriptions et messages d'erreur.
+ * Fournit une structure et des variantes de disposition partagees pour les formulaires.
+ */
 "use client"
 
 import { useMemo } from "react"

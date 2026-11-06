@@ -1,3 +1,7 @@
+/**
+ * Definit les types TypeScript des comptes et des reponses de leur API.
+ * Partage le contrat de donnees entre les composants de gestion et d'affichage.
+ */
 export type AccountType =
   | "CHECKING"
   | "SAVINGS"

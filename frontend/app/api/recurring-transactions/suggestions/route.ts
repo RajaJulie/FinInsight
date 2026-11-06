@@ -1,3 +1,7 @@
+/**
+ * Charge les transactions et recurrences de l'utilisateur puis appelle le moteur
+ * de detection pour retourner ses suggestions de depenses mensuelles.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

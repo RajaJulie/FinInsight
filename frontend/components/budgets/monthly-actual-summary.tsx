@@ -1,3 +1,7 @@
+/**
+ * Presente le bilan reel du mois : revenus, charges payees, categories et resultat.
+ * Affiche les soldes et avertissements fournis par le serveur sans recalcul financier local.
+ */
 import { ArrowDownLeft, ArrowUpRight, ChartNoAxesCombined, PiggyBank, ReceiptText, Wallet, WalletCards, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 

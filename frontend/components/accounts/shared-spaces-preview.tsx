@@ -1,3 +1,7 @@
+/**
+ * Presente des exemples visuels des futurs espaces partages.
+ * Cette section de demonstration n'active aucune gestion reelle de comptes communs.
+ */
 import { Heart, Home, Users } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"

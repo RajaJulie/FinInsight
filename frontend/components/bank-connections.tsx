@@ -1,3 +1,7 @@
+/**
+ * Affiche un apercu des comptes et de leurs soldes depuis l'API Comptes.
+ * Il s'agit des comptes enregistres dans FinInsight, pas d'une synchronisation bancaire.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

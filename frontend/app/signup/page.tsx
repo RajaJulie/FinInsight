@@ -1,3 +1,7 @@
+/**
+ * Affiche la page d'inscription avec le formulaire SignupForm.
+ * La creation du compte utilisateur est confiee a la route d'inscription.
+ */
 "use client"
 
 import Image from "next/image"

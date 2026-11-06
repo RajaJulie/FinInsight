@@ -1,3 +1,7 @@
+/**
+ * Teste la planification mensuelle : periodes d'activite, dates limites, reserves
+ * et reste a repartir, sans compter les previsions comme des depenses reelles.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 

@@ -1,3 +1,7 @@
+/**
+ * Liste les categories de l'utilisateur avec leurs informations de depense
+ * et permet d'en creer une apres validation et controle des doublons.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

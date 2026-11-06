@@ -1,3 +1,7 @@
+/**
+ * Verifie que les sections de charges et suggestions utilisent des cles React
+ * distinctes et stables, meme lorsque leurs compteurs de rafraichissement sont egaux.
+ */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { describe, it } from "node:test"

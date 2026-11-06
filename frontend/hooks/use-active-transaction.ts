@@ -1,3 +1,7 @@
+/**
+ * Suit la transaction visible dans l'historique lors du defilement ou du focus clavier.
+ * Expose la ligne active et les commandes de navigation pour le panneau de solde.
+ */
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"

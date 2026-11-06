@@ -1,3 +1,7 @@
+/**
+ * Choisit la transaction active selon la position des lignes dans la zone visible.
+ * Cette fonction pure pilote le suivi du defilement sans recalculer les soldes.
+ */
 export type TransactionRowPosition = { id: string; top: number; bottom: number }
 
 export function getVisibleActiveTransaction(

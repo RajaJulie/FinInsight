@@ -1,3 +1,7 @@
+/**
+ * Valide les champs de creation et modification d'une categorie,
+ * notamment le nom, le type et les options de presentation autorisees.
+ */
 import { z } from "zod"
 
 import { CATEGORY_ICON_VALUES } from "@/lib/categories/constants"

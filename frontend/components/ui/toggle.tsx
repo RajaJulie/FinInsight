@@ -1,3 +1,7 @@
+/**
+ * Fournit un bouton a etat actif ou inactif fonde sur Radix.
+ * Centralise ses variantes visuelles et ses tailles.
+ */
 "use client"
 
 import * as React from "react"

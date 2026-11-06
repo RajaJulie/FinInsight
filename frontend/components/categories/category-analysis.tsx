@@ -1,3 +1,7 @@
+/**
+ * Affiche les statistiques par categorie pour le mois, l'annee ou tout l'historique.
+ * Charge l'analyse depuis l'API et presente montants, parts et tendances.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

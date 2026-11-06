@@ -1,3 +1,7 @@
+/**
+ * Teste la reconstruction des soldes par compte et combines : ordre stable,
+ * transferts, doublons, soldes negatifs et independance vis-a-vis des filtres d'affichage.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { loadTs } from "../testing/load-ts.mjs"

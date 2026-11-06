@@ -1,3 +1,7 @@
+/**
+ * Modifie ou supprime un budget variable appartenant a l'utilisateur connecte.
+ * Valide la categorie et la periode puis restitue la consommation reelle du budget.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

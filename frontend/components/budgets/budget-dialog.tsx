@@ -1,3 +1,7 @@
+/**
+ * Formulaire reutilisable pour creer ou modifier une enveloppe variable.
+ * Charge les categories de depense, conserve la periode et signale les changements financiers.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

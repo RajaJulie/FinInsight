@@ -1,3 +1,7 @@
+/**
+ * Charge Tailwind et les styles partages puis definit les variables de theme,
+ * couleurs, polices et regles globales utilisees par les composants de l'application.
+ */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";

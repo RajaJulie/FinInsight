@@ -1,3 +1,7 @@
+/**
+ * Confirme le lien entre une depense existante et une charge recurrente accessible.
+ * Controle la compatibilite du paiement sans creer, supprimer ou debiter une transaction.
+ */
 import { NextResponse } from "next/server"
 import { z } from "zod"
 

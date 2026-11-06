@@ -1,3 +1,7 @@
+/**
+ * Presente le profil utilisateur dans un menu adaptable au mobile.
+ * Declenche la deconnexion Auth.js ; les autres entrees restent celles du gabarit visuel.
+ */
 "use client"
 
 import {

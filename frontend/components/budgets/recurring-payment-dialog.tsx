@@ -1,3 +1,7 @@
+/**
+ * Permet de confirmer un rapprochement incertain entre une charge et un paiement.
+ * Enregistre l'association via l'API puis demande le rafraichissement des donnees financieres.
+ */
 "use client"
 
 import { useRef, useState } from "react"

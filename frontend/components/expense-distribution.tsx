@@ -1,3 +1,7 @@
+/**
+ * Charge la repartition des depenses par categorie du dashboard.
+ * L'affiche en graphique avec legende, montants en euros et etats de chargement ou d'erreur.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

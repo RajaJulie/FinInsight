@@ -1,3 +1,7 @@
+/**
+ * Trace avec Recharts les revenus et depenses annuels ou le solde journalier mensuel.
+ * Formate les dates et les montants des donnees recues sans interroger directement l'API.
+ */
 "use client"
 
 import { Area, AreaChart, XAxis } from "recharts"

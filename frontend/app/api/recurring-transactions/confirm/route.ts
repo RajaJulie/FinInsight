@@ -1,3 +1,7 @@
+/**
+ * Confirme une suggestion de recurrence pour l'utilisateur connecte.
+ * Delegue la validation et la protection contre les doublons au service de confirmation.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

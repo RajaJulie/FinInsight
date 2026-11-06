@@ -1,3 +1,7 @@
+/**
+ * Assemble la barre laterale de l'application avec son identite visuelle
+ * et les menus de navigation principal et secondaire.
+ */
 "use client"
 
 import * as React from "react"

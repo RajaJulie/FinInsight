@@ -1,3 +1,7 @@
+/**
+ * Definit les schemas Zod de creation, confirmation et modification des charges.
+ * Controle les montants, la frequence, le jour et la coherence des dates d'application.
+ */
 import { z } from "zod"
 
 import { parseDateInputToUtcDate } from "@/lib/recurring/date-period"

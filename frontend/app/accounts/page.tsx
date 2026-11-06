@@ -1,3 +1,7 @@
+/**
+ * Page serveur des comptes : verifie la session puis affiche le gestionnaire
+ * de comptes dans la structure commune avec sidebar et en-tete.
+ */
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"

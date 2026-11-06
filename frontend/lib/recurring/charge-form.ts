@@ -1,3 +1,7 @@
+/**
+ * Prepare les valeurs et les modifications du formulaire de charge recurrente.
+ * Distingue la periode editable des anciennes periodes et signale les corrections historiques.
+ */
 import { formatDateInputValue, getTodayUtcDayStart } from "./date-period"
 
 export type RecurringChargeData = {

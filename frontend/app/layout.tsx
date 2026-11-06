@@ -1,3 +1,7 @@
+/**
+ * Definit la structure HTML racine, les polices et le theme initial de l'application.
+ * Installe les fournisseurs communs d'infobulles et de notifications.
+ */
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";

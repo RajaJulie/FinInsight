@@ -1,3 +1,7 @@
+/**
+ * Fournit la structure et l'etat de la sidebar, repliee ou ouverte selon l'ecran.
+ * Gere ses menus, son raccourci clavier et la memorisation de son affichage.
+ */
 "use client"
 
 import * as React from "react"

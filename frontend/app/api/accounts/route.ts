@@ -1,3 +1,7 @@
+/**
+ * Liste les comptes avec leurs soldes calcules et permet d'en creer un.
+ * Identifie l'utilisateur via Auth.js et applique les regles de compte principal.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

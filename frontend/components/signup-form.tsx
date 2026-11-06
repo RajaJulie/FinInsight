@@ -1,3 +1,7 @@
+/**
+ * Valide la saisie d'inscription cote interface et appelle la route de creation utilisateur.
+ * Affiche les erreurs et pilote la navigation apres reussite.
+ */
 "use client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"

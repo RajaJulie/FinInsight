@@ -1,3 +1,7 @@
+/**
+ * Centralise les types, icones, couleurs et modeles de categories par defaut
+ * utilises lors de l'initialisation et dans les formulaires.
+ */
 export type CategoryType = "INCOME" | "EXPENSE"
 
 export const CATEGORY_ICON_VALUES = [

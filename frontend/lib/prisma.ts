@@ -1,3 +1,7 @@
+/**
+ * Configure le client Prisma avec l'adaptateur PostgreSQL et DATABASE_URL.
+ * Reutilise l'instance en developpement pour limiter les connexions lors des rechargements.
+ */
 import { PrismaClient } from "@/lib/generated/prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 

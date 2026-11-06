@@ -1,3 +1,7 @@
+/**
+ * Affiche les charges manuelles et confirmees avec leurs periodes et montants.
+ * Permet l'ajout, la modification et le changement d'activite puis actualise les vues concernees.
+ */
 "use client"
 
 import { useCallback, useEffect, useState } from "react"

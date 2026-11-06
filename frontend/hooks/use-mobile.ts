@@ -1,3 +1,7 @@
+/**
+ * Expose un hook React qui suit le seuil d'affichage mobile avec matchMedia.
+ * Fournit un instantane serveur pour l'abonnement au changement de largeur.
+ */
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768

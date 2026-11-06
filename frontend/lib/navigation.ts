@@ -1,3 +1,7 @@
+/**
+ * Centralise les rubriques de navigation et retrouve celle correspondant au chemin courant.
+ * Les entrees encore indisponibles restent representees par un lien de substitution.
+ */
 export type NavigationIcon =
   | "dashboard"
   | "transactions"
@@ -19,7 +23,7 @@ export const mainNavigationItems: NavigationItem[] = [
   { title: "Catégories", url: "/categories", icon: "categories" },
   { title: "Comptes", url: "/accounts", icon: "accounts" },
   { title: "Budgets", url: "/budgets", icon: "budgets" },
-  { title: "Objectifs", url: "#", icon: "goals" },
+  { title: "Objectifs", url: "/goals", icon: "goals" },
   { title: "Insights", url: "#", icon: "insights" },
 ]
 

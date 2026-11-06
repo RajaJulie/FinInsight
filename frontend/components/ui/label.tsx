@@ -1,3 +1,7 @@
+/**
+ * Habille le label Radix pour associer les textes aux champs de formulaire.
+ * Partage les styles et l'affichage de l'etat desactive.
+ */
 "use client"
 
 import * as React from "react"

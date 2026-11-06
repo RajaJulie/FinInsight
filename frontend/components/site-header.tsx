@@ -1,3 +1,7 @@
+/**
+ * Compose l'en-tete commun avec le titre de la rubrique, le controle de sidebar
+ * et les informations utilisateur transmises par la page.
+ */
 "use client"
 
 import { Button } from "@/components/ui/button"

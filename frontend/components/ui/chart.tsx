@@ -1,3 +1,7 @@
+/**
+ * Encadre les graphiques Recharts avec une configuration de couleurs et de libelles.
+ * Fournit les infobulles et legendes reutilisables selon le theme.
+ */
 "use client"
 
 import * as React from "react"

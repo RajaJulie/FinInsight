@@ -1,3 +1,7 @@
+/**
+ * Calcule le bilan mensuel du perimetre de comptes choisi, avec ouverture, cloture
+ * et transferts entrants ou sortants, sans assimiler ces transferts a des revenus ou depenses.
+ */
 import { getAccountMovementCents } from "./balance"
 import { buildAccountBalanceHistory } from "./history"
 export { InvalidAccountScopeError } from "./balance"

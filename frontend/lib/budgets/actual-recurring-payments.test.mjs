@@ -1,3 +1,7 @@
+/**
+ * Verifie l'ajustement des charges prevues par les paiements rapproches du mois
+ * et l'exclusion prudente des suggestions correspondant deja a une recurrence confirmee.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { loadTs } from "../testing/load-ts.mjs"

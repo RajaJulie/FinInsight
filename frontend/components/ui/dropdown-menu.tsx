@@ -1,3 +1,7 @@
+/**
+ * Habille les menus deroulants Radix avec leurs groupes, sous-menus et options.
+ * Partage les styles des actions, cases a cocher et selections exclusives.
+ */
 "use client"
 
 import * as React from "react"

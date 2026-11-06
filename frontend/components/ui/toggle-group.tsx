@@ -1,3 +1,7 @@
+/**
+ * Regroupe les boutons a etat Radix et partage leurs tailles et variantes.
+ * Permet une selection simple ou multiple selon les proprietes du groupe.
+ */
 "use client"
 
 import * as React from "react"

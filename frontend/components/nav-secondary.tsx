@@ -1,3 +1,7 @@
+/**
+ * Affiche les liens secondaires fournis a la barre laterale.
+ * Reutilise les primitives de menu et les icones recues du parent.
+ */
 "use client"
 
 import * as React from "react"

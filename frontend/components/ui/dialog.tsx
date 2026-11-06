@@ -1,3 +1,7 @@
+/**
+ * Fournit les primitives de dialogue modal Radix : declencheur, contenu et fermeture.
+ * Partage les styles, titres et descriptions utilises par les formulaires.
+ */
 "use client"
 
 import * as React from "react"

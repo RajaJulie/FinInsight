@@ -1,3 +1,7 @@
+/**
+ * Modifie ou supprime une categorie appartenant a l'utilisateur connecte.
+ * Controle les references existantes et traite les conflits de categorie.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

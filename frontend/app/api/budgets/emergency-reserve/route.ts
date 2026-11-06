@@ -1,3 +1,7 @@
+/**
+ * Enregistre par PUT la reserve d'urgence planifiee de l'utilisateur pour un mois.
+ * Met a jour la planification uniquement, sans creer de depense ni mouvement bancaire.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

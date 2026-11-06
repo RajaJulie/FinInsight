@@ -1,3 +1,7 @@
+/**
+ * Charge et organise les categories de revenus et depenses.
+ * Coordonne leur creation, modification, suppression et analyse.
+ */
 "use client"
 
 import { useCallback, useEffect, useState } from "react"

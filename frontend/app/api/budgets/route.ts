@@ -1,3 +1,7 @@
+/**
+ * Liste les budgets du mois avec leur synthese de planification et leur bilan reel.
+ * Permet aussi de creer une enveloppe variable sur une categorie de l'utilisateur.
+ */
 import { NextResponse } from "next/server"
 import { z } from "zod"
 

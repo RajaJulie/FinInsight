@@ -1,3 +1,7 @@
+/**
+ * Prepare et valide le formulaire de confirmation d'une suggestion recurrente.
+ * Conserve son identifiant exact, construit le payload attendu et traduit les erreurs API.
+ */
 export type RecurringConfirmationSuggestion = {
   suggestionId: string
   title: string

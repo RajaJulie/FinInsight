@@ -1,3 +1,7 @@
+/**
+ * Habille les listes de selection Radix : declencheur, valeur, options et groupes.
+ * Partage aussi le portail et les commandes de defilement de la liste.
+ */
 "use client"
 
 import * as React from "react"

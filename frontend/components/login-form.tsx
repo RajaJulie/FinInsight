@@ -1,3 +1,7 @@
+/**
+ * Affiche le formulaire de connexion et envoie les identifiants a Auth.js.
+ * Gere l'attente, les erreurs et la navigation apres authentification.
+ */
 "use client"
 
 import {useRouter} from "next/navigation"

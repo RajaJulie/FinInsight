@@ -1,3 +1,7 @@
+/**
+ * Prepare les donnees du graphique du dashboard selon le mois et l'annee demandes.
+ * Restreint les comptes et transactions a l'utilisateur authentifie.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

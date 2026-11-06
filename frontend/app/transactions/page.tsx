@@ -1,3 +1,7 @@
+/**
+ * Page serveur de l'historique : verifie la session et assemble le tableau
+ * des transactions, le formulaire d'ajout et la navigation commune.
+ */
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import { auth } from "@/auth"

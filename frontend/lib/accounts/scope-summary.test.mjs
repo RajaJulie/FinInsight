@@ -1,3 +1,7 @@
+/**
+ * Verifie les bilans par perimetre de comptes, les transferts vers l'epargne
+ * et les soldes d'ouverture, sans inventer une reference bancaire verifiee.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { loadTs } from "../testing/load-ts.mjs"

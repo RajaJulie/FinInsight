@@ -1,3 +1,7 @@
+/**
+ * Resout le perimetre de comptes et le signe des mouvements en centimes.
+ * Calcule aussi le solde enregistre d'un compte a partir de son ouverture et de ses mouvements.
+ */
 import { toCents } from "@/lib/budgets/money"
 
 type Movement = { type: string; amount: unknown }

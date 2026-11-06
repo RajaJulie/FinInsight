@@ -1,3 +1,7 @@
+/**
+ * Liste les charges recurrentes et permet leur creation manuelle securisee.
+ * Verifie categorie, compte et doublons, puis enregistre une prevision, pas un paiement.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

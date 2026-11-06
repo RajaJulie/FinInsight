@@ -1,3 +1,7 @@
+/**
+ * Prepare les comptes Prisma pour les reponses JSON en ajoutant leur solde
+ * calcule avec la fonction de solde commune au projet.
+ */
 import type {
   Account,
   Transaction,

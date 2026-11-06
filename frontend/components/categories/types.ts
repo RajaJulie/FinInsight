@@ -1,3 +1,7 @@
+/**
+ * Partage les types des categories et des reponses d'analyse entre composants.
+ * Decrit les donnees affichees sans effectuer de calcul ni de requete.
+ */
 export type CategoryType = "INCOME" | "EXPENSE"
 
 export type CategoryItem = {

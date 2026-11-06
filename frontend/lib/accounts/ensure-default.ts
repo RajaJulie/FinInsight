@@ -1,3 +1,7 @@
+/**
+ * Retrouve ou cree le compte principal d'un utilisateur et lui rattache
+ * ses anciennes transactions encore depourvues de compte.
+ */
 import { DEFAULT_ACCOUNT } from "@/lib/accounts/constants"
 import { prisma } from "@/lib/prisma"
 

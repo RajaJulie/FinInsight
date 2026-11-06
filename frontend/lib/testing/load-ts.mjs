@@ -1,3 +1,7 @@
+/**
+ * Charge les modules TypeScript dans les tests Node avec compilation en memoire.
+ * Permet d'injecter des dependances simulees et de partager un cache de modules.
+ */
 import { readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, resolve } from "node:path"

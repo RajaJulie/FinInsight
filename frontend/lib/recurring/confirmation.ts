@@ -1,3 +1,7 @@
+/**
+ * Confirme une suggestion encore valide et enregistre son identite technique
+ * ainsi que ses transactions sources pour prevenir les doublons independamment du libelle choisi.
+ */
 import {
   detectRecurringTransactionSuggestions,
   normalizeRecurringTitle,

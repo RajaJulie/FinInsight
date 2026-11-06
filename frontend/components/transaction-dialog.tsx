@@ -1,3 +1,7 @@
+/**
+ * Formulaire commun d'ajout et de modification des revenus, depenses et virements.
+ * Charge les comptes et categories compatibles et actualise les vues apres succes de l'API.
+ */
 "use client"
 
 import { notifyFinanceChanged } from "@/lib/finance-events"

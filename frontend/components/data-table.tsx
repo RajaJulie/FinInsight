@@ -1,3 +1,7 @@
+/**
+ * Tableau generique issu du gabarit UI : tri, filtres, pagination et reorganisation
+ * des lignes avec TanStack Table et dnd-kit ; distinct du tableau metier des transactions.
+ */
 "use client"
 
 import * as React from "react"

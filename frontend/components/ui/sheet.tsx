@@ -1,3 +1,7 @@
+/**
+ * Adapte les primitives de dialogue Radix en panneau lateral.
+ * Expose le contenu, la fermeture et les zones de titre et description.
+ */
 "use client"
 
 import * as React from "react"

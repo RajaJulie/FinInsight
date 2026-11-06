@@ -1,3 +1,7 @@
+/**
+ * Charge les transactions et charges de l'utilisateur pour construire l'activite du mois.
+ * Centralise les rapprochements, depenses variables, charges ajustees et bilan reel.
+ */
 import { prisma } from "@/lib/prisma"
 import { reconcileRecurringPayments } from "@/lib/recurring/reconciliation"
 import { getRecurringMonthlyAmounts } from "@/lib/budgets/recurring-commitments"

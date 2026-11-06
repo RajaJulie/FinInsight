@@ -1,3 +1,7 @@
+/**
+ * Valide les transactions de revenu, depense ou transfert et leurs modifications.
+ * Distingue les champs d'une operation categorisee de ceux d'un virement entre comptes.
+ */
 import { z } from "zod"
 
 const commonFields = {

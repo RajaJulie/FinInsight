@@ -1,3 +1,7 @@
+/**
+ * Teste l'enregistrement de la reserve mensuelle avec des dependances simulees.
+ * Controle les validations, l'authentification et l'absence de mouvement bancaire.
+ */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { createRequire } from "node:module"

@@ -1,3 +1,7 @@
+/**
+ * Configure ESLint avec les regles Next.js, Core Web Vitals et TypeScript.
+ * Exclut les sorties de build et declarations generees de l'analyse.
+ */
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";

@@ -1,3 +1,7 @@
+/**
+ * Definit les schemas Zod de creation et modification d'un compte :
+ * nom, type, devise, presentation et autres champs autorises.
+ */
 import { z } from "zod"
 
 import {

@@ -1,3 +1,7 @@
+/**
+ * Retourne les statistiques de categories pour la periode validee de l'utilisateur.
+ * S'appuie sur les fonctions d'analyse communes plutot que sur des donnees d'affichage fixes.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

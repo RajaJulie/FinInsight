@@ -1,3 +1,7 @@
+/**
+ * Gere l'historique des transactions : filtres combines, tri, pagination et actions.
+ * Utilise l'historique complet pour les soldes et synchronise le panneau avec la ligne active.
+ */
 "use client"
 
 import { notifyFinanceChanged, subscribeFinanceChanges } from "@/lib/finance-events"

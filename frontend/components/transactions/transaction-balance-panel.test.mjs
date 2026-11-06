@@ -1,3 +1,7 @@
+/**
+ * Teste le panneau de solde : donnees recues, montants negatifs, etats vides,
+ * commandes clavier et respect des preferences de reduction des animations.
+ */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { createRequire } from "node:module"

@@ -1,3 +1,7 @@
+/**
+ * Calcule le bilan reel du mois a partir des revenus et depenses enregistres.
+ * Separe les paiements rapproches des autres depenses par categorie, sans double comptage.
+ */
 import { toCents } from "./money"
 
 type ActualTransaction = {

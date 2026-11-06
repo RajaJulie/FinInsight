@@ -1,3 +1,7 @@
+/**
+ * Configure le conteneur de notifications Sonner avec les icones et styles du projet.
+ * Adapte sa presentation au theme fourni par next-themes.
+ */
 "use client"
 
 import { useTheme } from "next-themes"

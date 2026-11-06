@@ -1,3 +1,7 @@
+/**
+ * Habille les infobulles Radix : fournisseur, declencheur et contenu.
+ * Partage les delais et les styles des aides contextuelles.
+ */
 "use client"
 
 import * as React from "react"

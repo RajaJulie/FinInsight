@@ -1,3 +1,7 @@
+/**
+ * Applique les modifications d'une charge recurrente dans une transaction Prisma.
+ * Controle les relations et les periodes, tout en preservant l'identite de detection et l'historique.
+ */
 import { Prisma } from "@/lib/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getTodayUtcDayStart } from "@/lib/recurring/date-period"

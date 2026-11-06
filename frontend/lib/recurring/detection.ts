@@ -1,3 +1,7 @@
+/**
+ * Detecte prudemment des series de depenses mensuelles par titre, montant, compte
+ * et coherence temporelle. Separe les series et ecarte celles deja confirmees.
+ */
 import { getActivityAmount, getActivityPeriodForDate, type RecurringActivityPeriod } from "./activity-periods"
 
 export type DetectableTransactionType = "INCOME" | "EXPENSE"

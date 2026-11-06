@@ -1,3 +1,7 @@
+/**
+ * Fournit le champ de saisie HTML partage avec les styles de focus,
+ * d'erreur et de desactivation, sans imposer de validation metier.
+ */
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

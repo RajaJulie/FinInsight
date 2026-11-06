@@ -1,3 +1,6 @@
+# Regles Git du depot : exclut les dependances, caches, sorties de build
+# et fichiers d'environnement pour ne pas les versionner.
+
 # Logs
 logs
 *.log

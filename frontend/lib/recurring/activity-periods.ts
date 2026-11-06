@@ -1,3 +1,7 @@
+/**
+ * Resout les periodes d'activite d'une charge, y compris les donnees historiques.
+ * Retrouve la periode et le montant applicables a une date sans modifier les enregistrements.
+ */
 export type RecurringActivityPeriod = {
   id?: string
   startDate: Date | string

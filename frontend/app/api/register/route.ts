@@ -1,3 +1,7 @@
+/**
+ * Cree un utilisateur apres verification de l'email et hachage du mot de passe.
+ * Initialise aussi ses categories et son compte par defaut.
+ */
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"

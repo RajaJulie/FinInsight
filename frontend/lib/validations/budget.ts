@@ -1,3 +1,7 @@
+/**
+ * Valide les periodes mensuelles et les payloads de creation ou modification
+ * d'un budget variable avant leur traitement par les routes.
+ */
 import { z } from "zod"
 
 const monthSchema = z.coerce

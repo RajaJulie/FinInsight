@@ -1,3 +1,7 @@
+/**
+ * Charge et affiche les comptes, leurs soldes et les actions de gestion.
+ * Coordonne les dialogues, suppressions et liens vers les transactions du compte choisi.
+ */
 "use client"
 
 import { useCallback, useEffect, useState } from "react"

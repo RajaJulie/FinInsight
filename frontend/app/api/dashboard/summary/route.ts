@@ -1,3 +1,7 @@
+/**
+ * Retourne les indicateurs du dashboard : soldes, revenus, depenses, repartition
+ * par categorie, transactions recentes et analyse mensuelle de l'utilisateur.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

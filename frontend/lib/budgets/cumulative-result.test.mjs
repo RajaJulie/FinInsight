@@ -1,3 +1,7 @@
+/**
+ * Teste les reports de resultat entre mois, les ouvertures et les historiques
+ * incomplets, ainsi que les filtres utilisateur et le perimetre bancaire.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { loadTs } from "../testing/load-ts.mjs"

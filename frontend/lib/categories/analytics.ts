@@ -1,3 +1,7 @@
+/**
+ * Construit les periodes d'analyse et agrege les transactions de l'utilisateur
+ * pour produire les statistiques et evolutions par categorie.
+ */
 import type { TransactionType } from "@/lib/generated/prisma/client"
 
 import { prisma } from "@/lib/prisma"

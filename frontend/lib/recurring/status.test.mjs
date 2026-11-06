@@ -1,3 +1,7 @@
+/**
+ * Teste les payloads de changement d'activite, les erreurs et la mise a jour
+ * ciblee d'une charge sans duplication ni modification d'une autre serie.
+ */
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 

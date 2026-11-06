@@ -1,3 +1,7 @@
+/**
+ * Configure Auth.js avec des sessions JWT et une connexion par email et mot de passe.
+ * Verifie le hachage bcrypt en base et exporte les outils d'authentification partages.
+ */
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"

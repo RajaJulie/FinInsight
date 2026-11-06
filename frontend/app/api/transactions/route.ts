@@ -1,3 +1,7 @@
+/**
+ * Liste l'historique de l'utilisateur dans un ordre deterministe et cree
+ * les revenus, depenses ou transferts apres validation de leurs relations.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

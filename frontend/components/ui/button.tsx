@@ -1,3 +1,7 @@
+/**
+ * Definit le bouton partage, ses tailles et ses variantes visuelles.
+ * Peut appliquer son rendu a un element enfant via le mecanisme Slot de Radix.
+ */
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"

@@ -1,3 +1,7 @@
+/**
+ * Formulaire commun de creation et modification d'une categorie.
+ * Gere le nom, le type, l'icone et la couleur avant l'envoi a l'API.
+ */
 "use client"
 
 import { useState } from "react"

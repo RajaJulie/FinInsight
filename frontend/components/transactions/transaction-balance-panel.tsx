@@ -1,3 +1,7 @@
+/**
+ * Affiche le solde et la date de la transaction active pour le perimetre choisi.
+ * Fournit les commandes de navigation sans calculer le solde depuis les seules lignes visibles.
+ */
 "use client"
 
 import { useEffect, useState, type RefObject } from "react"

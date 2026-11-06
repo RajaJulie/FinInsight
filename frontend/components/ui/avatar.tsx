@@ -1,3 +1,7 @@
+/**
+ * Primitives d'avatar Radix avec image, remplacement, badge et regroupement.
+ * Centralisent les tailles et styles des portraits utilisateur.
+ */
 "use client"
 
 import * as React from "react"

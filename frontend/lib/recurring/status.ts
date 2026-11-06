@@ -1,3 +1,7 @@
+/**
+ * Fournit les libelles, payloads et messages d'erreur d'activation ou desactivation.
+ * Remplace la charge concernee dans une liste sans alterer les autres series.
+ */
 export type RecurringStatusPatchPayload = {
   active: boolean
 }

@@ -1,3 +1,7 @@
+/**
+ * Pilote la page Budgets : periode choisie, enveloppes, reserve, charges et bilan reel.
+ * Recharge les donnees de l'API apres les actions et affiche la repartition sans dupliquer les formules.
+ */
 "use client"
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"

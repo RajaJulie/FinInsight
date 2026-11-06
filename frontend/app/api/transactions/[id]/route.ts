@@ -1,3 +1,7 @@
+/**
+ * Modifie ou supprime une transaction appartenant a l'utilisateur authentifie.
+ * Valide les comptes et categories necessaires selon le type de mouvement.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

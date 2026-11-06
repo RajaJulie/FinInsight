@@ -1,3 +1,7 @@
+/**
+ * Page serveur des budgets : protege l'acces par la session et affiche
+ * le gestionnaire de planification et de bilan mensuel dans le cadre commun.
+ */
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"

@@ -1,3 +1,7 @@
+/**
+ * Expose la modification et la suppression d'un compte appartenant a l'utilisateur.
+ * Valide les changements et controle les relations prises en charge avant une suppression.
+ */
 import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"

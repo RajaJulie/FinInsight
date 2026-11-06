@@ -1,3 +1,7 @@
+/**
+ * Habille les onglets Radix et leurs variantes de presentation.
+ * Expose la liste, les declencheurs et les panneaux de contenu.
+ */
 "use client"
 
 import * as React from "react"

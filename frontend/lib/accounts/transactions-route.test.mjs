@@ -1,3 +1,7 @@
+/**
+ * Teste la route de lecture des transactions avec des dependances simulees.
+ * Verifie l'authentification, l'isolation utilisateur, l'ordre stable et l'absence d'ecriture.
+ */
 import assert from "node:assert/strict"
 import { it } from "node:test"
 import { loadTs } from "../testing/load-ts.mjs"

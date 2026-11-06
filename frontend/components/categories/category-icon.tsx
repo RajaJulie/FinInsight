@@ -1,3 +1,7 @@
+/**
+ * Traduit les identifiants d'icones des categories en composants Lucide.
+ * Utilise une icone de remplacement pour les valeurs non reconnues.
+ */
 import {
   BriefcaseBusiness,
   Car,

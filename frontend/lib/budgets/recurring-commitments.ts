@@ -1,3 +1,7 @@
+/**
+ * Calcule les charges mensuelles applicables selon leurs periodes d'activite.
+ * Distingue les montants prevus, les paiements rapproches et les montants finalement retenus.
+ */
 import { getActivityAmount, getActivityPeriods, type RecurringActivityPeriod } from "../recurring/activity-periods"
 
 export type RecurringBudgetCommitment = {

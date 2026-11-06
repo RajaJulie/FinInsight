@@ -1,3 +1,7 @@
+/**
+ * Reconstruit les soldes apres chaque transaction sur l'historique complet.
+ * Ordonne les mouvements de facon deterministe et neutralise les transferts internes au perimetre.
+ */
 import { getAccountMovementCents, resolveAccountScope } from "./balance"
 import { toCents } from "@/lib/budgets/money"
 import type { ScopeAccount } from "./scope-summary"

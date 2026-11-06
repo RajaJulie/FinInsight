@@ -1,3 +1,7 @@
+/**
+ * Charge et presente l'analyse mensuelle du dashboard avec son illustration.
+ * Gere l'attente et les erreurs sans recalculer l'analyse recue du serveur.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

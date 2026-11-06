@@ -1,3 +1,7 @@
+/**
+ * Affiche les cartes de categories depensees depuis le resume du dashboard.
+ * Presente leur nom, illustration, montant, pourcentage et indication de repartition.
+ */
 "use client"
 
 import { useEffect, useState } from "react"

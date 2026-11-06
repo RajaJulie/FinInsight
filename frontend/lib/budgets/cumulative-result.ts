@@ -1,3 +1,7 @@
+/**
+ * Calcule le cumul des resultats mensuels enregistres et charge les donnees
+ * necessaires au bilan bancaire par perimetre, sans confondre ces deux indicateurs.
+ */
 import { prisma } from "@/lib/prisma"
 import { toCents } from "./money"
 import { calculateAccountScopeSummary, type AccountScopeSummary } from "@/lib/accounts/scope-summary"

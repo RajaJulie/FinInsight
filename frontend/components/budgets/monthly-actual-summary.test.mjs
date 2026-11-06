@@ -1,3 +1,7 @@
+/**
+ * Verifie le rendu du bilan reel : montants fournis par le serveur, categories,
+ * reports, etats vides et distinction entre resultat mensuel et solde bancaire.
+ */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { createRequire } from "node:module"

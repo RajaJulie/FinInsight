@@ -1,3 +1,7 @@
+/**
+ * Diffuse les changements financiers entre composants et onglets du navigateur.
+ * Permet de rafraichir les vues apres une action, au retour au premier plan ou periodiquement.
+ */
 const financeEvent = "fininsight:finance-changed"
 const financeChannel = "fininsight-finance"
 let sharedChannel: BroadcastChannel | null = null

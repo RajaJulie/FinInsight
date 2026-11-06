@@ -1,3 +1,7 @@
+/**
+ * Formulaire partage d'ajout manuel et de modification d'une charge recurrente.
+ * Charge les comptes et categories, valide les periodes et appelle l'API sans creer de paiement.
+ */
 "use client"
 
 import { useEffect, useRef, useState } from "react"

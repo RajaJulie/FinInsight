@@ -1,3 +1,7 @@
+/**
+ * Charge les suggestions de depenses recurrentes et gere leur confirmation par dialogue.
+ * Conserve chaque suggestionId ; Pas maintenant masque uniquement la suggestion en memoire.
+ */
 "use client"
 
 import { notifyFinanceChanged, subscribeFinanceChanges } from "@/lib/finance-events"

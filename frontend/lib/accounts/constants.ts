@@ -1,3 +1,7 @@
+/**
+ * Centralise les types, icones, couleurs et valeurs par defaut des comptes.
+ * Ces options sont partagees par les validations et les formulaires.
+ */
 export const ACCOUNT_TYPE_VALUES = [
   "CHECKING",
   "SAVINGS",

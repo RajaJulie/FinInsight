@@ -1,3 +1,7 @@
+/**
+ * Affiche les rubriques principales depuis la configuration de navigation.
+ * Associe leurs icones et met en evidence la rubrique correspondant au chemin courant.
+ */
 "use client"
 
 import {
@@ -60,7 +64,7 @@ export function NavMain({
                     : "h-11 rounded-xl text-white/70 hover:bg-white/5 hover:text-white"
                 }
               >
-                <a href={item.url}>
+                <a href={item.url} aria-current={activeItem?.url === item.url ? "page" : undefined}>
                   <Icon />
                   <span>{item.title}</span>
                 </a>

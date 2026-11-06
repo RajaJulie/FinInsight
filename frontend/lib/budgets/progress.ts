@@ -1,3 +1,7 @@
+/**
+ * Definit les bornes UTC d'un mois et retrouve la consommation variable d'un budget
+ * a partir de l'activite mensuelle partagee, hors paiements recurrents rapproches.
+ */
 import { getMonthlyBudgetActivity } from "@/lib/budgets/monthly-activity"
 
 export function getBudgetDateRange(month: number, year: number) {

@@ -1,3 +1,7 @@
+/**
+ * Valide les parametres de periode, mois et annee de l'analyse des categories
+ * et fournit les valeurs par defaut attendues par l'API.
+ */
 import { z } from "zod"
 
 const currentYear = new Date().getFullYear()

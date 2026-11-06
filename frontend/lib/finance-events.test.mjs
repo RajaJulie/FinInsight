@@ -1,3 +1,7 @@
+/**
+ * Verifie les abonnements aux changements financiers, au focus et a la visibilite,
+ * ainsi que le rafraichissement periodique et le nettoyage des ecouteurs.
+ */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { it } from "node:test"

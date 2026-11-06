@@ -1,3 +1,7 @@
+/**
+ * Fournit les parties communes des cartes : cadre, en-tete, titre, contenu et pied.
+ * Centralise leur presentation sans contenir de logique metier.
+ */
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
